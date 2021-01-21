@@ -165,10 +165,8 @@ class BoardView(tk.Frame):
 
     def draw_highlights(self, highlight_list):
         tile = self.images['highlight_tile']
-        for p in range(0, len(highlight_list)):
-            f = highlight_list[p].f
-            r = highlight_list[p].r
-            self.draw_tile(f, r, tile)
+        for item in highlight_list:
+            self.draw_tile(item.f, item.r, tile)
 
     # reversing rank so rank 0 is the bottom (chess) rather than top (tk) for White
     def flip_y_r(self, in_val):
@@ -1177,37 +1175,31 @@ class Controller(object):
             self.close_all_but_current()
 
     def handle_bv_click(self, event):
+        self.bv.update_display(self.cm)
+
         click_location = self.bv.get_click_location(event)
         piece = self.cm.get_piece_at(click_location)
         print('click:', click_location.f, click_location.r, piece)
-
-        click1_b = False
-        self.bv.update_display(self.cm)
 
         # If clicked on piece of side w turn, then it's click1.
         #   highlight the piece and all legal moves
         if self.cm.get_turn_color() == get_piece_color(piece):
             self.click1 = click_location
             self.legal_dests = self.cm.get_legal_moves_from(click_location)
-            click1_b = True
 
             self.bv.draw_highlights(self.legal_dests)
-            self.bv.draw_highlights([self.click1])
+            self.bv.draw_highlights([click_location])
 
-        click2_b = False
-        # if we didn't just do the click1, and there is a click1 stored, then it might be the click2
-        if (not click1_b) and (self.click1 != []):
-            click2 = click_location
-            for dest in self.legal_dests:
-                if click2.f == dest.f and click2.r == dest.r:
-                    self.move(self.click1, click2)
-                    self.click1 = []
-                    self.legal_dests = []
-                    click2_b = True
-                    break
+        else:
+            # if we didn't just do the click1, and there is a click1 stored, then it might be the click2
+            if self.click1 != []:
+                click2 = click_location
+                for dest in self.legal_dests:
+                    if click2.f == dest.f and click2.r == dest.r:
+                        self.move(self.click1, click2)
+                        break
 
-        # if it wasn't a click1 or click2, then reset
-        if not click1_b and not click2_b:
+            # reset
             self.click1 = []
             self.legal_dests = []
 
