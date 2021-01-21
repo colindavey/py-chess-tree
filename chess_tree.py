@@ -345,21 +345,13 @@ class PChessGameModel(object):
             self.game.headers["Black"] = 'Me'
 
     def get_legal_moves_from(self, bl):
-        # board model
-        piece = self.board.piece_at(chess.square(bl.f, bl.r))
-        dest_list = []
-        if piece is not None:
-            if piece.color == self.board.turn:
-                start_fr = fr2str(bl.f, bl.r)
-                legal_moves = self.board.legal_moves
-                print('legal moves:')
-                for f in range(0, 8):
-                    for r in range(0, 8):
-                        if not (f == bl.f and r == bl.r):
-                            tmp_fr = fr2str(f, r)
-                            if chess.Move.from_uci(start_fr + tmp_fr) in legal_moves:
-                                print(tmp_fr)
-                                dest_list.append(BoardLocation(f, r))
+        start_fr = fr2str(bl.f, bl.r)
+        legal_moves = [str(m) for m in self.board.legal_moves]
+        legal_moves = list(filter(lambda m : m[0:2] == start_fr, legal_moves))
+        # maps e.g. ["e2e3", "e2e4"] to ["e3", "e4"] to [{f : 4, r : 2}, {f : 4, r : 3}]
+        dest_list = list(map(
+                lambda m : BoardLocation(ord(m[2]) - ord('a'), ord(m[3]) - ord('1')),
+                legal_moves))
         return dest_list
 
     def get_piece_at(self, bl):
@@ -1199,17 +1191,15 @@ class Controller(object):
             self.legal_dests = self.cm.get_legal_moves_from(click_location)
             click1_b = True
 
-            # highlight the legal move squares and the clicked square
-            highlight_list = self.legal_dests
-            highlight_list.append(self.click1)
-            self.bv.draw_highlights(highlight_list)
+            self.bv.draw_highlights(self.legal_dests)
+            self.bv.draw_highlights([self.click1])
 
         click2_b = False
         # if we didn't just do the click1, and there is a click1 stored, then it might be the click2
         if (not click1_b) and (self.click1 != []):
             click2 = click_location
-            for ind in range(0, len(self.legal_dests)):
-                if click2.f == self.legal_dests[ind].f and click2.r == self.legal_dests[ind].r:
+            for dest in self.legal_dests:
+                if click2.f == dest.f and click2.r == dest.r:
                     self.move(self.click1, click2)
                     self.click1 = []
                     self.legal_dests = []
