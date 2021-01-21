@@ -393,14 +393,10 @@ class PChessGameModel(object):
         self.node = self.node.variations[p]
         self.report()
 
-    # def move_frwd_full(self):
-    #     # p = self.get_var_ind_from_san(san)
-    #     # # board model
-    #     # self.board.push_san(san)
-    #     # # pgn model
-    #     # self.node = self.node.variations[p]
-    #     # self.report()
-    #     pass
+    def move_frwd_full(self):
+        while not self.node.is_end():
+            self.node = self.node.variations[0]
+            self.board.push_san(self.node.san())
 
     def move_to(self, moves):
         # board model
@@ -1288,16 +1284,7 @@ class Controller(object):
 
     def move_frwd_full(self):
         if self.check_comment():
-            # get the moves from the beginning of the game to the selected tree node,
-            # which is assumed to be the current game node
-            moves = self.ct.get_tree_moves()
-            # get the moves from the current game node to the end and append
-            # !!!move this code to the game model class
-            node = self.cm.node
-            while not node.is_end():
-                node = node.variations[0]
-                moves.append(node.san())
-            self.cm.move_to(moves)
+            self.cm.move_frwd_full()
             self.update_display()
             self.close_all_but_current()
 
