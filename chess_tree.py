@@ -1213,17 +1213,13 @@ class Controller(object):
         self.diddle_var('demote')
 
     def save_comment(self):
-        node = self.cm.node
-        # node = self.ce.node
         comment = self.ce.editor.get(1.0, END)
         comment = comment[0:-1]
         print('comment:', comment)
-        # self.cm.set_comment(comment)
-        # funky addressing member of cm node directly, but probably can't be helped...
-        node.comment = comment
+        self.cm.set_comment(comment)
         self.ce.save_button.configure(state=tk.DISABLED)
         self.ce.editor.edit_modified(False)
-        self.ct.update_tree_node(node, self.ce.tree_node)
+        self.ct.update_tree_node(self.cm.node, self.ce.tree_node)
 
     def check_comment(self):
         ret_val = True
