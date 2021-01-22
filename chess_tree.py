@@ -342,7 +342,9 @@ class PChessGameModel(object):
             self.game.headers["White"] = 'Opponent'
             self.game.headers["Black"] = 'Me'
 
-    def get_legal_moves_from(self, bl):
+    def get_legal_dests_from(self, bl):
+        if get_piece_color(self.get_piece_at(bl)) != color_bool2char(self.board.turn):
+            return False, []
         start_fr = fr2str(bl.f, bl.r)
         legal_moves = [str(m) for m in self.board.legal_moves]
         legal_moves = list(filter(lambda m : m[0:2] == start_fr, legal_moves))
@@ -350,7 +352,7 @@ class PChessGameModel(object):
         dest_list = list(map(
                 lambda m : BoardLocation(ord(m[2]) - ord('a'), ord(m[3]) - ord('1')),
                 legal_moves))
-        return dest_list
+        return True, dest_list
 
     def get_piece_at(self, bl):
         # board model
@@ -361,10 +363,6 @@ class PChessGameModel(object):
         if piece is not None:
             piece_symbol = piece.symbol()
         return piece_symbol
-
-    def get_turn_color(self):
-        # board model
-        return color_bool2char(self.board.turn)
 
     ###########################
     # moves
@@ -434,20 +432,15 @@ class PChessGameModel(object):
     def move_add(self, start, destination):
         print('move:', start.f, start.r, destination.f, destination.r)
         uci = fr2str(start.f, start.r) + fr2str(destination.f, destination.r)
-
+        san = self.san(start, destination)
         # pgn model
-        # !!!redundant test? len(self.game.variations) == 0 implies self.node.parent is None?
-        if self.node.parent is None and len(self.game.variations) == 0:
-            # self.node = self.game.add_variation(chess.Move.from_uci(uci))
-            node = self.game.add_variation(chess.Move.from_uci(uci))
+        if self.node.has_variation(chess.Move.from_uci(uci)):
+            added = False
+            node = self.node.variation(chess.Move.from_uci(uci))
         else:
-            # self.node = self.node.add_variation(chess.Move.from_uci(uci))
+            added = True
             node = self.node.add_variation(chess.Move.from_uci(uci))
-        return print_game_node(node)
-
-    def move_exists(self, start, destination):
-        uci = fr2str(start.f, start.r) + fr2str(destination.f, destination.r)
-        return self.node.has_variation(chess.Move.from_uci(uci))
+        return added, san, print_game_node(node)
 
     def san(self, start, destination):
         uci = fr2str(start.f, start.r) + fr2str(destination.f, destination.r)
@@ -1174,14 +1167,14 @@ class Controller(object):
         self.bv.update_display(self.cm)
 
         click_location = self.bv.get_click_location(event)
-        piece = self.cm.get_piece_at(click_location)
-        print('click:', click_location.f, click_location.r, piece)
+        print('click:', click_location.f, click_location.r)
 
         # If clicked on piece of side w turn, then it's click1.
         #   highlight the piece and all legal moves
-        if self.cm.get_turn_color() == get_piece_color(piece):
+        valid_click, legal_dests = self.cm.get_legal_dests_from(click_location)
+        if valid_click:
             self.click1 = click_location
-            self.legal_dests = self.cm.get_legal_moves_from(click_location)
+            self.legal_dests = legal_dests
 
             self.bv.draw_highlights(self.legal_dests)
             self.bv.draw_highlights([click_location])
@@ -1240,13 +1233,11 @@ class Controller(object):
     # from board click
     def move(self, click1, click2):
         if self.check_comment():
-            # self.cm.move(click1, click2)
-            if not self.cm.move_exists(click1, click2):
-                move_str = self.cm.move_add(click1, click2)
+            added, san, move_str = self.cm.move_add(click1, click2)
+            if added:
                 # update the tree
                 self.ct.add_move_to_tree(move_str)
                 # update the option menu? not necessary, since we're about to leave
-            san = self.cm.san(click1, click2)
             self.cm.move_frwd(san)
             self.update_display()
 
