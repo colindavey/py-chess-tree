@@ -64,13 +64,6 @@ def print_listing_horizontal(game_node):
     print(tmpstr)
     return tmpstr
 
-def get_plie_num(game_node):
-    move_num = game_node.parent.board().fullmove_number
-    plie_num = (move_num - 1) * 2
-    if not game_node.parent.board().turn:
-        plie_num += 1
-    return plie_num
-
 def make_brief_comment_str(game_node):
     comment_str = game_node.comment
     if comment_str != "":
@@ -83,9 +76,10 @@ def make_brief_comment_str(game_node):
         comment_str = ' {' + comment_str + '}'
     return comment_str
 
-def print_game_node(game_node, init_plie_num=0):
+def print_game_node(game_node, init_ply_num=0):
     move_num = game_node.parent.board().fullmove_number
-    plie_num = get_plie_num(game_node)
+    ply_num = game_node.parent.board().ply()
+
     # assuming it's white's turn
     turn_str = str(move_num) + '.'
     # if it's black's turn
@@ -93,7 +87,7 @@ def print_game_node(game_node, init_plie_num=0):
         turn_str += '..'
     turn_str += ' '
     spaces = ''
-    for q in range(0, plie_num-(init_plie_num+1)):
+    for q in range(0, ply_num-(init_ply_num+1)):
         spaces += '  '
     end_str = ""
     if game_node.is_end():
@@ -107,16 +101,16 @@ def print_game_node_hybrid(game_node):
     print_listing_horizontal(game_node)
     print_game_node_recur(game_node, True)
 
-def print_game_node_recur(game_node, initial=False, plie_num=0):
+def print_game_node_recur(game_node, initial=False, ply_num=0):
     # if game_node.parent is not None:
     if initial:
         if game_node.parent is not None:
-            plie_num = get_plie_num(game_node)
+            ply_num = game_node.parent.board().ply()
     else:
-        print_game_node(game_node, init_plie_num=plie_num)
+        print_game_node(game_node, init_ply_num=ply_num)
     if not game_node.is_end():
         for p in range(0, len(game_node.variations)):
-            print_game_node_recur(game_node.variations[p], plie_num=plie_num)
+            print_game_node_recur(game_node.variations[p], ply_num=ply_num)
 
 def get_piece_color(piece):
     if piece == EMPTY_SQUARE:
@@ -481,6 +475,70 @@ def geo_str2list(geo_str):
     geo = [int(i) for i in geo]
     return geo
 
+class ChessListing(tk.Frame):
+    def __init__(self, parent=None, do_grid=False):
+        tk.Frame.__init__(self, parent)
+        self.table = ttk.Treeview(parent)
+        ysb = ttk.Scrollbar(parent, orient='vertical', command=self.table.yview)
+        self.table.configure(yscroll=ysb.set)
+        ysb.pack(side=RIGHT, fill=Y)
+        self.table.pack(side=BOTTOM, fill=BOTH, expand=True)
+        self.pack()
+
+        self.table['columns'] = ('w', 'b')
+        self.table.heading("#0", text='#', anchor='center')
+        self.table.column("#0", width=5)
+        self.table.heading('w', text='W')
+        self.table.column('w', anchor='center', width=12)
+        self.table.heading('b', text='B')
+        self.table.column('b', anchor='center', width=12)
+        self.table.configure(selectmode='none')
+
+    def update_listing(self, moves):
+        children = self.table.get_children('')
+        for child in children:
+            self.table.delete(child)
+        for p in range(0, len(moves), 2):
+            wm = moves[p]
+            bm = ''
+            if p < len(moves)-1:
+                bm = moves[p+1]
+            self.table.insert('', 'end', text=str(p // 2 + 1) + ".", values=(wm, bm))
+
+    def handle_click(self, event):
+        # get the row and column clicked on. row and col aren't numbers
+        # they are tree things, with rows like I00B and cols like #1
+        row = self.table.identify_row(event.y)
+        col = self.table.identify_column(event.x)
+        moves = []
+        # make sure we have clicked in an actual cell
+        # if not clicked in the column with the numbers (e.g. '1.')
+        # and haven't clicked outside of the actual rows
+        if col != '#0' and row != '':
+            # get the text from the cell clicked on
+            values = self.table.item(row, 'values')
+            value = values[0]
+            if col == '#2':
+                value = values[1]
+            # if the cell wasn't empty (the rightmost column of the last move with no move by black)
+            if value != '':
+                # get all the rows
+                items = self.table.get_children('')
+                # go through all the rows building up the moves stop when we get to the clicked-on move
+                for p in range(0, len(items)):
+                    values = self.table.item(items[p], 'values')
+                    # add the first move of the row
+                    moves.append(values[0])
+                    # if we're not at the last row, then add the move
+                    if items[p] != row:
+                        moves.append(values[1])
+                    else:
+                        # break on the last row, adding black's move if that's what was clicked on
+                        if col == '#2': # and values[1] != '':
+                            moves.append(values[1])
+                        break
+        return moves
+
 
 class Controls(tk.Frame):
     def __init__(self, parent=None):
@@ -582,71 +640,6 @@ class Controls(tk.Frame):
         self.demoteVarBtn.config(state=new_state)
 
         # self.horzListLabel.configure(text=print_listing_horizontal(cm.node))
-
-
-class ChessListing(tk.Frame):
-    def __init__(self, parent=None, do_grid=False):
-        tk.Frame.__init__(self, parent)
-        self.table = ttk.Treeview(parent)
-        ysb = ttk.Scrollbar(parent, orient='vertical', command=self.table.yview)
-        self.table.configure(yscroll=ysb.set)
-        ysb.pack(side=RIGHT, fill=Y)
-        self.table.pack(side=BOTTOM, fill=BOTH, expand=True)
-        self.pack()
-
-        self.table['columns'] = ('w', 'b')
-        self.table.heading("#0", text='#', anchor='center')
-        self.table.column("#0", width=5)
-        self.table.heading('w', text='W')
-        self.table.column('w', anchor='center', width=12)
-        self.table.heading('b', text='B')
-        self.table.column('b', anchor='center', width=12)
-        self.table.configure(selectmode='none')
-
-    def update_listing(self, moves):
-        children = self.table.get_children('')
-        for child in children:
-            self.table.delete(child)
-        for p in range(0, len(moves), 2):
-            wm = moves[p]
-            bm = ''
-            if p < len(moves)-1:
-                bm = moves[p+1]
-            self.table.insert('', 'end', text=str(p // 2 + 1) + ".", values=(wm, bm))
-
-    def handle_click(self, event):
-        # get the row and column clicked on. row and col aren't numbers
-        # they are tree things, with rows like I00B and cols like #1
-        row = self.table.identify_row(event.y)
-        col = self.table.identify_column(event.x)
-        moves = []
-        # make sure we have clicked in an actual cell
-        # if not clicked in the column with the numbers (e.g. '1.')
-        # and haven't clicked outside of the actual rows
-        if col != '#0' and row != '':
-            # get the text from the cell clicked on
-            values = self.table.item(row, 'values')
-            value = values[0]
-            if col == '#2':
-                value = values[1]
-            # if the cell wasn't empty (the rightmost column of the last move with no move by black)
-            if value != '':
-                # get all the rows
-                items = self.table.get_children('')
-                # go through all the rows building up the moves stop when we get to the clicked-on move
-                for p in range(0, len(items)):
-                    values = self.table.item(items[p], 'values')
-                    # add the first move of the row
-                    moves.append(values[0])
-                    # if we're not at the last row, then add the move
-                    if items[p] != row:
-                        moves.append(values[1])
-                    else:
-                        # break on the last row, adding black's move if that's what was clicked on
-                        if col == '#2': # and values[1] != '':
-                            moves.append(values[1])
-                        break
-        return moves
 
 class ChessTree(tk.Frame):
     def __init__(self, parent=None, do_grid=False):
@@ -771,18 +764,18 @@ class ChessTree(tk.Frame):
             x = 2
             # if it's not the root node representing the starting position
             if self.tree.parent(item) != '':
-                # get the plie num from the beginning of the string
+                # get the ply num from the beginning of the string
                 # e.g. 1. vs 1...
                 dotind = tmptxt.find('.')
                 move_num = int(tmptxt[0:dotind])
-                plie_num = (move_num - 1) * 2
+                ply_num = (move_num - 1) * 2
                 # if it's black's turn
                 if tmptxt[dotind+1] == '.':
-                    plie_num += 1
-                plie_num += 1
+                    ply_num += 1
+                ply_num += 1
                 # bumping up the depth width because seems to work better
-                x = x + (plie_num * 20.5)
-                # x = x + (plie_num * 21)
+                x = x + (ply_num * 20.5)
+                # x = x + (ply_num * 21)
             w = x + tw
             if w > max_w:
                 max_w = w
