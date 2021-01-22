@@ -18,6 +18,292 @@ from chess import pgn
 
 from comment_editor import *
 
+#####################################
+# Utility Functions
+
+def game_node2moves(game_node):
+    moves = []
+    tmp_node = game_node
+    while tmp_node.parent is not None:
+        moves.append(tmp_node.san())
+        tmp_node = tmp_node.parent
+    moves.reverse()
+    return moves
+
+def get_numbered_moves(game_node):
+    moves = game_node2moves(game_node)
+    # add the numbers to all of white's moves
+    for p in range(0, len(moves), 2):
+        san = moves[p]
+        moves[p] = str(p // 2 + 1) + '. ' + san
+    return moves
+
+def print_listing_vertical(game_node):
+    moves = get_numbered_moves(game_node)
+    num_moves = len(moves)
+    for p in range(0, num_moves):
+        # if it's white's move, make the 1st half of the line.
+        if p % 2 == 0:
+            tmpstr = moves[p]
+            # if it's the last move, then there is no black bit to append. so print it now
+            if p == num_moves - 1:
+                print(tmpstr)
+        # if it's black's move, make the 2nd half of the line and print it.
+        else:
+            tmpstr += '\t' + moves[p]
+            print(tmpstr)
+
+def print_listing_horizontal(game_node):
+    moves = get_numbered_moves(game_node)
+    num_moves = len(moves)
+    tmpstr = ''
+    for p in range(0, num_moves):
+        tmpstr += moves[p]
+        if p != num_moves - 1:
+            tmpstr += ' '
+    print(tmpstr)
+    return tmpstr
+
+def get_plie_num(game_node):
+    move_num = game_node.parent.board().fullmove_number
+    plie_num = (move_num - 1) * 2
+    if not game_node.parent.board().turn:
+        plie_num += 1
+    return plie_num
+
+def make_brief_comment_str(game_node):
+    comment_str = game_node.comment
+    if comment_str != "":
+        # strip out new lines
+        comment_str = comment_str.replace('\n' ,' ')
+        # if comment is too long, shorten it and append "..."
+        max_comment_str_len = 50
+        if len(comment_str) > max_comment_str_len:
+            comment_str = comment_str[0:max_comment_str_len] + '...'
+        comment_str = ' {' + comment_str + '}'
+    return comment_str
+
+def print_game_node(game_node, init_plie_num=0):
+    move_num = game_node.parent.board().fullmove_number
+    plie_num = get_plie_num(game_node)
+    # assuming it's white's turn
+    turn_str = str(move_num) + '.'
+    # if it's black's turn
+    if not game_node.parent.board().turn:
+        turn_str += '..'
+    turn_str += ' '
+    spaces = ''
+    for q in range(0, plie_num-(init_plie_num+1)):
+        spaces += '  '
+    end_str = ""
+    if game_node.is_end():
+        end_str = " *"
+    comment_str = make_brief_comment_str(game_node)
+    str_out = turn_str + game_node.san() + comment_str
+    print(spaces + str_out + end_str)
+    return str_out
+
+def print_game_node_hybrid(game_node):
+    print_listing_horizontal(game_node)
+    print_game_node_recur(game_node, True)
+
+def print_game_node_recur(game_node, initial=False, plie_num=0):
+    # if game_node.parent is not None:
+    if initial:
+        if game_node.parent is not None:
+            plie_num = get_plie_num(game_node)
+    else:
+        print_game_node(game_node, init_plie_num=plie_num)
+    if not game_node.is_end():
+        for p in range(0, len(game_node.variations)):
+            print_game_node_recur(game_node.variations[p], plie_num=plie_num)
+
+def get_piece_color(piece):
+    if piece == EMPTY_SQUARE:
+        return ' '
+    elif piece.lower() == piece:
+        return 'B'
+    else:
+        return 'W'
+
+def color_bool2char(bool_in):
+    if bool_in:
+        return 'W'
+    else:
+        return 'B'
+
+# file and rank inds to square name (e.g. "a1")
+def fr2str(file, rank):
+    # return chess.FILE_NAMES[file] + chess.RANK_NAMES[rank]
+    return chess.SQUARE_NAMES[chess.square(file, rank)]
+
+class PChessGameModel(object):
+    def __init__(self, vp):
+        """create a chess board with pieces positioned for a new game
+        row ordering is reversed from normal chess representations
+        but corresponds to a top left screen coordinate
+        """
+        # board model
+        self.board = chess.Board()
+        # pgn model
+        self.game = chess.pgn.Game()
+        self.node = self.game
+        self.set_headers(vp)
+
+    def set_headers(self, vp):
+        if vp == 'W':
+            self.game.headers["White"] = 'Me'
+            self.game.headers["Black"] = 'Opponent'
+        else:
+            self.game.headers["White"] = 'Opponent'
+            self.game.headers["Black"] = 'Me'
+
+    def get_legal_dests_from(self, bl):
+        if get_piece_color(self.get_piece_at(bl)) != color_bool2char(self.board.turn):
+            return False, []
+        start_fr = fr2str(bl.f, bl.r)
+        legal_moves = [str(m) for m in self.board.legal_moves]
+        legal_moves = list(filter(lambda m : m[0:2] == start_fr, legal_moves))
+        # maps e.g. ["e2e3", "e2e4"] to ["e3", "e4"] to [{f : 4, r : 2}, {f : 4, r : 3}]
+        dest_list = list(map(
+                lambda m : BoardLocation(ord(m[2]) - ord('a'), ord(m[3]) - ord('1')),
+                legal_moves))
+        return True, dest_list
+
+    def get_piece_at(self, bl):
+        # board model
+        piece = self.board.piece_at(chess.square(bl.f, bl.r))
+        # !!! This works. Do I need board at all? Just use game/nodes?
+        # piece = self.node.board().piece_at(chess.square(f, r))
+        piece_symbol = EMPTY_SQUARE
+        if piece is not None:
+            piece_symbol = piece.symbol()
+        return piece_symbol
+
+    ###########################
+    # moves
+    ###########################
+
+    def move_back_full(self):
+        # board model
+        self.board = chess.Board()
+        # pgn model
+        self.node = self.game
+        self.report()
+
+    def move_back(self):
+        # board model
+        self.board.pop()
+
+        # pgn model
+        self.node = self.node.parent
+        self.report()
+
+    def move_frwd(self, san):
+        p = self.get_var_ind_from_san(san)
+        # board model
+        self.board.push_san(san)
+        # pgn model
+        self.node = self.node.variations[p]
+        self.report()
+
+    def move_frwd_full(self):
+        while not self.node.is_end():
+            self.node = self.node.variations[0]
+            self.board.push_san(self.node.san())
+
+    def move_to(self, moves):
+        # board model
+        self.board = chess.Board()
+
+        # pgn model
+        self.node = self.game
+
+        for p in range(0, len(moves)):
+            # pgn model
+            ind = self.get_var_ind_from_san(moves[p])
+            # self.node = self.node.variation(chess.Move.from_uci(uci))
+            self.node = self.node.variation(ind)
+            # board model
+            self.board.push_san(moves[p])
+        self.report()
+
+    def move_add(self, start, destination):
+        print('move:', start.f, start.r, destination.f, destination.r)
+        uci = fr2str(start.f, start.r) + fr2str(destination.f, destination.r)
+        san = self.san(start, destination)
+        # pgn model
+        if self.node.has_variation(chess.Move.from_uci(uci)):
+            added = False
+            node = self.node.variation(chess.Move.from_uci(uci))
+        else:
+            added = True
+            node = self.node.add_variation(chess.Move.from_uci(uci))
+        return added, san, print_game_node(node)
+
+    def san(self, start, destination):
+        uci = fr2str(start.f, start.r) + fr2str(destination.f, destination.r)
+        return self.node.board().san(chess.Move.from_uci(uci))
+
+    # ##############################
+    # pgn model only below here
+    # ##############################
+
+    def get_comment(self):
+        return self.node.comment
+
+    def set_comment(self, comment):
+        self.node.comment = comment
+
+    def diddle_var(self, diddle, san):
+        print(diddle + 'Var')
+        p = self.get_var_ind_from_san(san)
+        if diddle == 'remove':
+            self.node.remove_variation(self.node.variations[p].move)
+        elif diddle == 'promote2main':
+            self.node.promote_to_main(self.node.variations[p].move)
+        elif diddle == 'promote':
+            self.node.promote(self.node.variations[p].move)
+        elif diddle == 'demote':
+            self.node.demote(self.node.variations[p].move)
+        self.report()
+
+    # Assumes Var exists, should never get here if it doesn't. Intended for getting variation from san in dropdown menu
+    def get_var_ind_from_san(self, san):
+        for p in range(0, len(self.node.variations)):
+            # !!!can/should I use board in variations instead?
+            # If can, then should. I think self.node.board().san
+            if san == self.board.san(self.node.variations[p].move):
+                return p
+
+    def report(self):
+        # print('pgn:')
+        # print(self.game)
+        # print('tree:')
+        # print_game_node_recur(self.game, True)
+        # print('listing:')
+        # print_listing_vertical(self.node)
+        # print('horizontal listing:')
+        # print_listing_horizontal(self.node)
+        # print('hybrid horizontal tree:')
+        # print_game_node_hybrid(self.node)
+        pass
+
+    def save_pgn(self, filename):
+        f = open(filename, 'w')
+        print(self.game, file=f)
+        f.close()
+
+    def load_pgn(self, filename):
+        f = open(filename)
+        self.game = chess.pgn.read_game(f)
+        print(self.game)
+        f.close()
+        # !!!Error handling
+        # board model
+        self.board = chess.Board()
+        # pgn model
+        self.node = self.game
 
 # BASED ON
 # Representing a chess set in Python
@@ -188,332 +474,12 @@ class BoardLocation(object):
         self.f = f
         self.r = r
 
-#####################################
-# Utility Functions
-
-
 def geo_str2list(geo_str):
     geo_str = geo_str.replace('+', ' ')
     geo_str = geo_str.replace('x', ' ')
     geo = geo_str.split(' ')
     geo = [int(i) for i in geo]
     return geo
-
-def game_node2moves(game_node):
-    moves = []
-    tmp_node = game_node
-    while tmp_node.parent is not None:
-        moves.append(tmp_node.san())
-        tmp_node = tmp_node.parent
-    moves.reverse()
-    return moves
-
-def get_numbered_moves(game_node):
-    moves = game_node2moves(game_node)
-    # add the numbers to all of white's moves
-    for p in range(0, len(moves), 2):
-        san = moves[p]
-        moves[p] = str(p // 2 + 1) + '. ' + san
-    return moves
-
-def print_listing_vertical(game_node):
-    moves = get_numbered_moves(game_node)
-    num_moves = len(moves)
-    for p in range(0, num_moves):
-        # if it's white's move, make the 1st half of the line.
-        if p % 2 == 0:
-            tmpstr = moves[p]
-            # if it's the last move, then there is no black bit to append. so print it now
-            if p == num_moves - 1:
-                print(tmpstr)
-        # if it's black's move, make the 2nd half of the line and print it.
-        else:
-            tmpstr += '\t' + moves[p]
-            print(tmpstr)
-
-
-def print_listing_horizontal(game_node):
-    moves = get_numbered_moves(game_node)
-    num_moves = len(moves)
-    tmpstr = ''
-    for p in range(0, num_moves):
-        tmpstr += moves[p]
-        if p != num_moves - 1:
-            tmpstr += ' '
-    print(tmpstr)
-    return tmpstr
-
-
-def get_plie_num(game_node):
-    move_num = game_node.parent.board().fullmove_number
-    plie_num = (move_num - 1) * 2
-    if not game_node.parent.board().turn:
-        plie_num += 1
-    return plie_num
-
-def make_brief_comment_str(game_node):
-    comment_str = game_node.comment
-    if comment_str != "":
-        # strip out new lines
-        comment_str = comment_str.replace('\n' ,' ')
-        # if comment is too long, shorten it and append "..."
-        max_comment_str_len = 50
-        if len(comment_str) > max_comment_str_len:
-            comment_str = comment_str[0:max_comment_str_len] + '...'
-        comment_str = ' {' + comment_str + '}'
-    return comment_str
-
-def print_game_node(game_node, init_plie_num=0):
-    move_num = game_node.parent.board().fullmove_number
-    plie_num = get_plie_num(game_node)
-    # assuming it's white's turn
-    turn_str = str(move_num) + '.'
-    # if it's black's turn
-    if not game_node.parent.board().turn:
-        turn_str += '..'
-    turn_str += ' '
-    spaces = ''
-    for q in range(0, plie_num-(init_plie_num+1)):
-        spaces += '  '
-    end_str = ""
-    if game_node.is_end():
-        end_str = " *"
-    comment_str = make_brief_comment_str(game_node)
-    str_out = turn_str + game_node.san() + comment_str
-    print(spaces + str_out + end_str)
-    return str_out
-
-
-def print_game_node_hybrid(game_node):
-    print_listing_horizontal(game_node)
-    print_game_node_recur(game_node, True)
-
-
-def print_game_node_recur(game_node, initial=False, plie_num=0):
-    # if game_node.parent is not None:
-    if initial:
-        if game_node.parent is not None:
-            plie_num = get_plie_num(game_node)
-    else:
-        print_game_node(game_node, init_plie_num=plie_num)
-    if not game_node.is_end():
-        for p in range(0, len(game_node.variations)):
-            print_game_node_recur(game_node.variations[p], plie_num=plie_num)
-
-
-def get_piece_color(piece):
-    if piece == EMPTY_SQUARE:
-        return ' '
-    elif piece.lower() == piece:
-        return 'B'
-    else:
-        return 'W'
-
-def color_bool2char(bool_in):
-    if bool_in:
-        return 'W'
-    else:
-        return 'B'
-
-# file and rank inds to square name (e.g. "a1")
-def fr2str(file, rank):
-    # return chess.FILE_NAMES[file] + chess.RANK_NAMES[rank]
-    return chess.SQUARE_NAMES[chess.square(file, rank)]
-
-
-class PChessGameModel(object):
-    def __init__(self, vp):
-        """create a chess board with pieces positioned for a new game
-        row ordering is reversed from normal chess representations
-        but corresponds to a top left screen coordinate
-        """
-        # board model
-        self.board = chess.Board()
-        # pgn model
-        self.game = chess.pgn.Game()
-        self.node = self.game
-        self.set_headers(vp)
-
-    def set_headers(self, vp):
-        if vp == 'W':
-            self.game.headers["White"] = 'Me'
-            self.game.headers["Black"] = 'Opponent'
-        else:
-            self.game.headers["White"] = 'Opponent'
-            self.game.headers["Black"] = 'Me'
-
-    def get_legal_dests_from(self, bl):
-        if get_piece_color(self.get_piece_at(bl)) != color_bool2char(self.board.turn):
-            return False, []
-        start_fr = fr2str(bl.f, bl.r)
-        legal_moves = [str(m) for m in self.board.legal_moves]
-        legal_moves = list(filter(lambda m : m[0:2] == start_fr, legal_moves))
-        # maps e.g. ["e2e3", "e2e4"] to ["e3", "e4"] to [{f : 4, r : 2}, {f : 4, r : 3}]
-        dest_list = list(map(
-                lambda m : BoardLocation(ord(m[2]) - ord('a'), ord(m[3]) - ord('1')),
-                legal_moves))
-        return True, dest_list
-
-    def get_piece_at(self, bl):
-        # board model
-        piece = self.board.piece_at(chess.square(bl.f, bl.r))
-        # !!! This works. Do I need board at all? Just use game/nodes?
-        # piece = self.node.board().piece_at(chess.square(f, r))
-        piece_symbol = EMPTY_SQUARE
-        if piece is not None:
-            piece_symbol = piece.symbol()
-        return piece_symbol
-
-    ###########################
-    # moves
-    ###########################
-
-    def move_back_full(self):
-        # board model
-        self.board = chess.Board()
-        # pgn model
-        self.node = self.game
-        self.report()
-
-    def move_back(self):
-        # board model
-        self.board.pop()
-
-        # pgn model
-        self.node = self.node.parent
-        self.report()
-
-    def move_frwd(self, san):
-        p = self.get_var_ind_from_san(san)
-        # board model
-        self.board.push_san(san)
-        # pgn model
-        self.node = self.node.variations[p]
-        self.report()
-
-    def move_frwd_full(self):
-        while not self.node.is_end():
-            self.node = self.node.variations[0]
-            self.board.push_san(self.node.san())
-
-    def move_to(self, moves):
-        # board model
-        self.board = chess.Board()
-
-        # pgn model
-        self.node = self.game
-
-        for p in range(0, len(moves)):
-            # pgn model
-            ind = self.get_var_ind_from_san(moves[p])
-            # self.node = self.node.variation(chess.Move.from_uci(uci))
-            self.node = self.node.variation(ind)
-            # board model
-            self.board.push_san(moves[p])
-        self.report()
-
-    # def move(self, start, destination):
-    #     print('move:', start.f, start.r, destination.f, destination.r)
-    #     uci = fr2str(start.f, start.r) + fr2str(destination.f, destination.r)
-    #
-    #     # board model
-    #     self.board.push_uci(uci)
-    #
-    #     # pgn model
-    #     if self.node.parent is None and len(self.game.variations) == 0:
-    #         self.node = self.game.add_variation(chess.Move.from_uci(uci))
-    #     else:
-    #         if not self.node.has_variation(chess.Move.from_uci(uci)):
-    #             self.node = self.node.add_variation(chess.Move.from_uci(uci))
-    #         else:
-    #             self.node = self.node.variation(chess.Move.from_uci(uci))
-    #     self.report()
-
-    def move_add(self, start, destination):
-        print('move:', start.f, start.r, destination.f, destination.r)
-        uci = fr2str(start.f, start.r) + fr2str(destination.f, destination.r)
-        san = self.san(start, destination)
-        # pgn model
-        if self.node.has_variation(chess.Move.from_uci(uci)):
-            added = False
-            node = self.node.variation(chess.Move.from_uci(uci))
-        else:
-            added = True
-            node = self.node.add_variation(chess.Move.from_uci(uci))
-        return added, san, print_game_node(node)
-
-    def san(self, start, destination):
-        uci = fr2str(start.f, start.r) + fr2str(destination.f, destination.r)
-        return self.node.board().san(chess.Move.from_uci(uci))
-
-    # ##############################
-    # pgn model only below here
-    # ##############################
-
-    def get_comment(self):
-        return self.node.comment
-
-    def set_comment(self, comment):
-        self.node.comment = comment
-
-    def diddle_var(self, diddle, san):
-        print(diddle + 'Var')
-        p = self.get_var_ind_from_san(san)
-        if diddle == 'remove':
-            self.node.remove_variation(self.node.variations[p].move)
-        elif diddle == 'promote2main':
-            self.node.promote_to_main(self.node.variations[p].move)
-        elif diddle == 'promote':
-            self.node.promote(self.node.variations[p].move)
-        elif diddle == 'demote':
-            self.node.demote(self.node.variations[p].move)
-        self.report()
-
-    # Assumes Var exists, should never get here if it doesn't. Intended for getting variation from san in dropdown menu
-    def get_var_ind_from_san(self, san):
-        for p in range(0, len(self.node.variations)):
-            # !!!can/should I use board in variations instead?
-            # If can, then should. I think self.node.board().san
-            if san == self.board.san(self.node.variations[p].move):
-                return p
-
-    def report(self):
-        # print('pgn:')
-        # print(self.game)
-        # print('tree:')
-        # print_game_node_recur(self.game, True)
-        # print('listing:')
-        # print_listing_vertical(self.node)
-        # print('horizontal listing:')
-        # print_listing_horizontal(self.node)
-        # print('hybrid horizontal tree:')
-        # print_game_node_hybrid(self.node)
-        pass
-
-    def save_pgn(self, filename):
-        f = open(filename, 'w')
-        print(self.game, file=f)
-        f.close()
-        # f = open(filename+'.epd', 'w')
-        # epd = self.node.board().epd()
-        # print(epd, file=f)
-        # f.close()
-        # print(epd)
-
-    def load_pgn(self, filename):
-        f = open(filename)
-        # !!!Is setting to None necessary or useful? Thinking memory leak.
-        self.game = None
-        self.game = chess.pgn.read_game(f)
-        print(self.game)
-        f.close()
-        # !!!Error handling
-        # board model
-        # !!!Is setting to None necessary or useful? Thinking memory leak.
-        self.board = None
-        self.board = chess.Board()
-        # pgn model
-        self.node = self.game
 
 
 class Controls(tk.Frame):
@@ -883,7 +849,7 @@ class ChessTree(tk.Frame):
         tree_node = self.get_root_node()
         for p in range(0, len(moves)):
             tmp_next_move = moves[p]
-            # this bit is candidate for turning into a routine
+            # !!!this bit is candidate for turning into a routine
             childrenIDs = self.tree.get_children(tree_node)
             # should always pass this if, since the premise is that all moves are in the tree
             if len(childrenIDs) > 0:
@@ -1315,14 +1281,6 @@ class Controller(object):
         # new tree for built-in
         self.ct.make_tree(self.cm.game)
         self.ct.horz_scrollbar_magic()
-
-    # # make sure the appropriate tree node is selected based on the current move
-    # # and the appropriate variation of the move is secondary selected
-    # def update_tree(self):
-    #     moves = game_node2moves(self.cm.node)
-    #     next_move = self.c.next_move_str.get()
-    #     # for built-in
-    #     self.ct.update_tree(moves, next_move)
 
     # when the next move menu changes, next_move_str changes bringing control to here.
     # this routine updates the tree.
