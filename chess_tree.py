@@ -86,7 +86,7 @@ def print_pgn_node_recur(pgn_node, initial=False, ply_num=0):
 #     pass
 
 # Critical code
-def make_board_state(pgn_node):
+def make_state_str(pgn_game, pgn_node):
     board = pgn_node.board()
     state_str = {}
     piece_distrib = []
@@ -112,6 +112,7 @@ def make_board_state(pgn_node):
     state_str["comment"] = pgn_node.comment
     state_str["has_parent"] = pgn_node.parent is not None
     state_str["moves"] = pgn_node2moves(pgn_node)
+    state_str["pgn_str"] = game2pgn_str(pgn_game)
     # report(state_str)
     return state_str
 
@@ -129,7 +130,10 @@ def init_pgn_state(game, vp):
     game = set_headers(game, vp)
     state_pgn["game"] = game
     state_pgn["node"] = game
-    return state_pgn, make_board_state(state_pgn["node"]) 
+    return state_pgn, make_state_str(state_pgn["game"], state_pgn["node"]) 
+
+def calc_game_node(state):
+    return state["game"], state["node"]
 
 def calc_san(pgn_node, start, destination):
     uci = file_rank2str(start.file, start.rank) + file_rank2str(destination.file, destination.rank)
@@ -150,7 +154,7 @@ def pgn_node2moves(pgn_node):
     moves.reverse()
     return moves
 
-def game2pgn_string(game):
+def game2pgn_str(game):
     exporter = chess.pgn.StringExporter(headers=True, variations=True, comments=True)
     return game.accept(exporter)
 
@@ -200,29 +204,29 @@ class ChessModelAPI(object):
         for p in range(0, len(moves)):
             ind = get_var_ind_from_san(state_pgn["node"], moves[p])
             state_pgn["node"] = state_pgn["node"].variation(ind)
-        return state_pgn, make_board_state(state_pgn["node"])
+        return state_pgn, make_state_str(state_pgn["game"], state_pgn["node"])
 
     def move_back_full(self, state_pgn):
         state_pgn["node"] = state_pgn["game"]
-        return state_pgn, make_board_state(state_pgn["node"])
+        return state_pgn, make_state_str(state_pgn["game"], state_pgn["node"])
 
     def move_back(self, state_pgn):
         state_pgn["node"] = state_pgn["node"].parent
-        return state_pgn, make_board_state(state_pgn["node"])
+        return state_pgn, make_state_str(state_pgn["game"], state_pgn["node"])
 
     def move_frwd(self, state_pgn, san):
         ind = get_var_ind_from_san(state_pgn["node"], san)
         state_pgn["node"] = state_pgn["node"].variations[ind]
-        return state_pgn, make_board_state(state_pgn["node"])
+        return state_pgn, make_state_str(state_pgn["game"], state_pgn["node"])
 
     def move_frwd_full(self, state_pgn):
         while not state_pgn["node"].is_end():
             state_pgn["node"] = state_pgn["node"].variations[0]
-        return state_pgn, make_board_state(state_pgn["node"])
+        return state_pgn, make_state_str(state_pgn["game"], state_pgn["node"])
 
     def set_comment(self, state_pgn, comment):
         state_pgn["node"].comment = comment
-        return state_pgn, make_board_state(state_pgn["node"])
+        return state_pgn, make_state_str(state_pgn["game"], state_pgn["node"])
 
     def diddle_var(self, state_pgn, diddle, san):
         print(diddle + 'Var')
@@ -235,7 +239,7 @@ class ChessModelAPI(object):
             state_pgn["node"].promote(state_pgn["node"].variations[ind].move)
         elif diddle == 'demote':
             state_pgn["node"].demote(state_pgn["node"].variations[ind].move)
-        return state_pgn, make_board_state(state_pgn["node"])
+        return state_pgn, make_state_str(state_pgn["game"], state_pgn["node"])
 
     ####################################
     # Doesn't change board state
@@ -1033,7 +1037,7 @@ class App(object):
         if filename != '':
             # self.vp is a control variable attached to the White/Black radio buttons
             vp = color_bool2char(self.vp.get())
-            self.state_pgn, self.make_board_state = self.cm.load_pgn(filename, vp)
+            self.state_pgn, self.state_str = self.cm.load_pgn(filename, vp)
             print(self.state_pgn["game"])
             self.update_display()
             self.make_tree_builtin()
