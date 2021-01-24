@@ -72,23 +72,23 @@ def print_pgn_node_recur(pgn_node, initial=False, ply_num=0):
         for p in range(0, len(pgn_node.variations)):
             print_pgn_node_recur(pgn_node.variations[p], ply_num=ply_num)
 
-# def report(state, board_state):
+# def report(state_pgn, state_str):
 #     # print('pgn:')
-#     # print(state.game)
+#     # print(state_pgn.game)
 #     # print('tree:')
-#     # print_pgn_node_recur(state.game, True)
+#     # print_pgn_node_recur(state_pgn.game, True)
 #     # print('listing:')
-#     # print_listing_vertical(state.node)
+#     # print_listing_vertical(state_pgn.node)
 #     # print('horizontal listing:')
-#     # print_listing_horizontal(state.node)
+#     # print_listing_horizontal(state_pgn.node)
 #     # print('hybrid horizontal tree:')
-#     # print_pgn_node_hybrid(state.node)
+#     # print_pgn_node_hybrid(state_pgn.node)
 #     pass
 
 # Critical code
 def make_board_state(pgn_node):
     board = pgn_node.board()
-    board_state = {}
+    state_str = {}
     piece_distrib = []
     for file_ in range(0,8):
         rank_array = []
@@ -100,20 +100,20 @@ def make_board_state(pgn_node):
                 piece_symbol = piece.symbol()
             rank_array.append(piece_symbol)
         piece_distrib.append(rank_array)
-    board_state["piece_distrib"] = piece_distrib
-    board_state["fen"] = board.fen()
-    board_state["turn"] = color_bool2char(board.turn)
-    board_state["legal_moves"] = [str(m) for m in board.legal_moves]
+    state_str["piece_distrib"] = piece_distrib
+    state_str["fen"] = board.fen()
+    state_str["turn"] = color_bool2char(board.turn)
+    state_str["legal_moves"] = [str(m) for m in board.legal_moves]
 
     variations = []
     for variation in pgn_node.variations:
         variations.append(variation.san())
-    board_state["variations"] = variations
-    board_state["comment"] = pgn_node.comment
-    board_state["has_parent"] = pgn_node.parent is not None
-    board_state["moves"] = pgn_node2moves(pgn_node)
-    # report(board_state)
-    return board_state
+    state_str["variations"] = variations
+    state_str["comment"] = pgn_node.comment
+    state_str["has_parent"] = pgn_node.parent is not None
+    state_str["moves"] = pgn_node2moves(pgn_node)
+    # report(state_str)
+    return state_str
 
 def set_headers(game, vp):
     if vp == 'W':
@@ -125,11 +125,11 @@ def set_headers(game, vp):
     return game
 
 def init_pgn_state(game, vp):
-    state = {}
+    state_pgn = {}
     game = set_headers(game, vp)
-    state["game"] = game
-    state["node"] = game
-    return state, make_board_state(state["node"]) 
+    state_pgn["game"] = game
+    state_pgn["node"] = game
+    return state_pgn, make_board_state(state_pgn["node"]) 
 
 def calc_san(pgn_node, start, destination):
     uci = file_rank2str(start.file, start.rank) + file_rank2str(destination.file, destination.rank)
@@ -194,77 +194,73 @@ class ChessModelAPI(object):
     # moves
     ###########################
 
-    def move_to(self, state, moves):
-        state["node"] = state["game"]
+    def move_to(self, state_pgn, moves):
+        state_pgn["node"] = state_pgn["game"]
 
         for p in range(0, len(moves)):
-            ind = get_var_ind_from_san(state["node"], moves[p])
-            state["node"] = state["node"].variation(ind)
-        return state, make_board_state(state["node"])
+            ind = get_var_ind_from_san(state_pgn["node"], moves[p])
+            state_pgn["node"] = state_pgn["node"].variation(ind)
+        return state_pgn, make_board_state(state_pgn["node"])
 
-    def move_back_full(self, state):
-        state["node"] = state["game"]
-        return state, make_board_state(state["node"])
+    def move_back_full(self, state_pgn):
+        state_pgn["node"] = state_pgn["game"]
+        return state_pgn, make_board_state(state_pgn["node"])
 
-    def move_back(self, state):
-        state["node"] = state["node"].parent
-        return state, make_board_state(state["node"])
+    def move_back(self, state_pgn):
+        state_pgn["node"] = state_pgn["node"].parent
+        return state_pgn, make_board_state(state_pgn["node"])
 
-    def move_frwd(self, state, san):
-        ind = get_var_ind_from_san(state["node"], san)
-        state["node"] = state["node"].variations[ind]
-        return state, make_board_state(state["node"])
+    def move_frwd(self, state_pgn, san):
+        ind = get_var_ind_from_san(state_pgn["node"], san)
+        state_pgn["node"] = state_pgn["node"].variations[ind]
+        return state_pgn, make_board_state(state_pgn["node"])
 
-    def move_frwd_full(self, state):
-        while not state["node"].is_end():
-            state["node"] = state["node"].variations[0]
-        return state, make_board_state(state["node"])
+    def move_frwd_full(self, state_pgn):
+        while not state_pgn["node"].is_end():
+            state_pgn["node"] = state_pgn["node"].variations[0]
+        return state_pgn, make_board_state(state_pgn["node"])
 
-    def set_comment(self, state, comment):
-        state["node"].comment = comment
-        return state, make_board_state(state["node"])
+    def set_comment(self, state_pgn, comment):
+        state_pgn["node"].comment = comment
+        return state_pgn, make_board_state(state_pgn["node"])
 
-    def diddle_var(self, state, diddle, san):
+    def diddle_var(self, state_pgn, diddle, san):
         print(diddle + 'Var')
-        ind = get_var_ind_from_san(state["node"], san)
+        ind = get_var_ind_from_san(state_pgn["node"], san)
         if diddle == 'remove':
-            state["node"].remove_variation(state["node"].variations[ind].move)
+            state_pgn["node"].remove_variation(state_pgn["node"].variations[ind].move)
         elif diddle == 'promote2main':
-            state["node"].promote_to_main(state["node"].variations[ind].move)
+            state_pgn["node"].promote_to_main(state_pgn["node"].variations[ind].move)
         elif diddle == 'promote':
-            state["node"].promote(state["node"].variations[ind].move)
+            state_pgn["node"].promote(state_pgn["node"].variations[ind].move)
         elif diddle == 'demote':
-            state["node"].demote(state["node"].variations[ind].move)
-        return state, make_board_state(state["node"])
+            state_pgn["node"].demote(state_pgn["node"].variations[ind].move)
+        return state_pgn, make_board_state(state_pgn["node"])
 
     ####################################
-    # Doesn't change board_state
+    # Doesn't change board state
     ####################################
 
-    def move_add(self, state, start, destination):
+    def move_add(self, state_pgn, start, destination):
         print('move:', start.file, start.rank, destination.file, destination.rank)
         uci = file_rank2str(start.file, start.rank) + file_rank2str(destination.file, destination.rank)
-        san = calc_san(state["node"], start, destination)
-        if state["node"].has_variation(chess.Move.from_uci(uci)):
+        san = calc_san(state_pgn["node"], start, destination)
+        if state_pgn["node"].has_variation(chess.Move.from_uci(uci)):
             added = False
-            node = state["node"].variation(chess.Move.from_uci(uci))
+            node = state_pgn["node"].variation(chess.Move.from_uci(uci))
         else:
             added = True
-            node = state["node"].add_variation(chess.Move.from_uci(uci))
-        return state, added, san, print_pgn_node(node)
+            node = state_pgn["node"].add_variation(chess.Move.from_uci(uci))
+        return state_pgn, added, san, print_pgn_node(node)
 
-    def set_headers(self, state, vp):
-        state["game"] = set_headers(state["game"], vp)
-        return state
+    def set_headers(self, state_pgn, vp):
+        state_pgn["game"] = set_headers(state_pgn["game"], vp)
+        return state_pgn
 
-    def save_pgn(self, state, filename):
+    def save_pgn(self, state_pgn, filename):
         f = open(filename, 'w')
-        print(state["game"], file=f)
+        print(state_pgn["game"], file=f)
         f.close()
-
-    ####################################
-    # Move to utility functions above
-    ####################################
 
 ####################################
 # GUI BOARD
@@ -943,7 +939,7 @@ class App(object):
         # Create the chess model (cm)
         self.cm = ChessModelAPI()
 
-        self.state, self.board_state = self.cm.init_state(vp)
+        self.state_pgn, self.state_str = self.cm.init_state(vp)
 
         self.top = Frame(self.parent)
         # self.top.pack(side=TOP, fill=BOTH, expand=True)
@@ -1037,8 +1033,8 @@ class App(object):
         if filename != '':
             # self.vp is a control variable attached to the White/Black radio buttons
             vp = color_bool2char(self.vp.get())
-            self.state, self.make_board_state = self.cm.load_pgn(filename, vp)
-            print(self.state["game"])
+            self.state_pgn, self.make_board_state = self.cm.load_pgn(filename, vp)
+            print(self.state_pgn["game"])
             self.update_display()
             self.make_tree_builtin()
         # put the focus back on the tree so keyboard works.
@@ -1060,9 +1056,9 @@ class App(object):
         # self.vp is a control variable attached to the White/Black radio buttons
         vp = color_bool2char(self.vp.get())
         self.bv.set_player(vp)
-        self.bv.update_display(self.board_state["piece_distrib"])
-        self.state = self.cm.set_headers(self.state, vp)
-        self.ct.update_tree_node(self.state["game"], self.ct.get_root_node())
+        self.bv.update_display(self.state_str["piece_distrib"])
+        self.state_pgn = self.cm.set_headers(self.state_pgn, vp)
+        self.ct.update_tree_node(self.state_pgn["game"], self.ct.get_root_node())
 
     # close the comment window when closing main window
     def on_closing(self):
@@ -1104,18 +1100,18 @@ class App(object):
         # get filename
         filename = filedialog.asksaveasfilename(defaultextension='.pgn')
         if filename != '':
-            self.cm.save_pgn(self.state, filename)
+            self.cm.save_pgn(self.state_pgn, filename)
 
     def handle_cl_click(self, event):
         moves = self.cl.handle_click(event)
         print(moves)
         if len(moves) > 0:
-            self.state, self.board_state = self.cm.move_to(self.state, moves)
+            self.state_pgn, self.state_str = self.cm.move_to(self.state_pgn, moves)
             self.update_display()
             self.close_all_but_current()
 
     def handle_bv_click(self, event):
-        self.bv.update_display(self.board_state["piece_distrib"])
+        self.bv.update_display(self.state_str["piece_distrib"])
 
         click_location = self.bv.get_click_location(event)
         print('click:', click_location.file, click_location.rank)
@@ -1144,10 +1140,10 @@ class App(object):
             self.legal_dests = []
 
     def get_legal_dests_from(self, board_coords):
-        if get_piece_color(self.board_state["piece_distrib"][board_coords.rank][board_coords.file]) != self.board_state["turn"]:
+        if get_piece_color(self.state_str["piece_distrib"][board_coords.rank][board_coords.file]) != self.state_str["turn"]:
             return False, []
         start_coord = file_rank2str(board_coords.file, board_coords.rank)
-        legal_moves = list(filter(lambda m : m[0:2] == start_coord, self.board_state["legal_moves"]))
+        legal_moves = list(filter(lambda m : m[0:2] == start_coord, self.state_str["legal_moves"]))
         # maps e.g. ["e2e3", "e2e4"] to ["e3", "e4"] to [{f : 4, r : 2}, {f : 4, r : 3}]
         dest_list = list(map(
             lambda m : BoardCoords(ord(m[2]) - ord('a'), ord(m[3]) - ord('1')),
@@ -1156,7 +1152,7 @@ class App(object):
 
     def remove_var(self):
         self.diddle_var('remove')
-        self.c.update_display(self.board_state["has_parent"], self.board_state["variations"])
+        self.c.update_display(self.state_str["has_parent"], self.state_str["variations"])
 
     def promote2main_var(self):
         self.diddle_var('promote2main')
@@ -1180,25 +1176,25 @@ class App(object):
         return ret_val
 
     ##############################
-    # change board_state
+    # change board state
     ##############################
     def save_comment(self):
         comment = self.ce.editor.get(1.0, END)
         comment = comment[0:-1]
         print('comment:', comment)
-        self.state, self.board_state = self.cm.set_comment(self.state, comment)
+        self.state_pgn, self.state_str = self.cm.set_comment(self.state_pgn, comment)
         self.ce.save_button.configure(state=tk.DISABLED)
         self.ce.editor.edit_modified(False)
-        self.ct.update_tree_node(self.state["node"], self.ce.tree_node)
+        self.ct.update_tree_node(self.state_pgn["node"], self.ce.tree_node)
 
     def diddle_var(self, diddle):
         san = self.c.next_move_str.get()
-        self.state, self.board_state = self.cm.diddle_var(self.state, diddle, san)
+        self.state_pgn, self.state_str = self.cm.diddle_var(self.state_pgn, diddle, san)
         self.diddle_var_tree(diddle)
-        # self.c.update_display(self.board_state["has_parent"], self.board_state["variations"])
+        # self.c.update_display(self.state_str["has_parent"], self.state_str["variations"])
         if diddle == 'remove':
             san = ''
-        self.c.update_next_move_option_menu(self.board_state["variations"], san)
+        self.c.update_next_move_option_menu(self.state_str["variations"], san)
 
     # moves
 
@@ -1208,66 +1204,66 @@ class App(object):
             if self.check_comment():
                 # get the moves from the beginning of the game to the selected tree node
                 moves = self.ct.get_tree_moves()
-                self.state, self.board_state = self.cm.move_to(self.state, moves)
+                self.state_pgn, self.state_str = self.cm.move_to(self.state_pgn, moves)
                 self.update_display()
 
     # from buttons
     def move_back_full(self):
         if self.check_comment():
-            self.state, self.board_state = self.cm.move_back_full(self.state)
+            self.state_pgn, self.state_str = self.cm.move_back_full(self.state_pgn)
             self.update_display()
             self.close_all_but_current()
 
     def move_back(self):
         if self.check_comment():
-            self.state, self.board_state = self.cm.move_back(self.state)
+            self.state_pgn, self.state_str = self.cm.move_back(self.state_pgn)
             self.update_display()
             self.close_all_but_current()
 
     # from board click
     def move(self, click1, click2):
         if self.check_comment():
-            self.state, added, san, move_str = self.cm.move_add(self.state, click1, click2)
+            self.state_pgn, added, san, move_str = self.cm.move_add(self.state_pgn, click1, click2)
             if added:
                 # update the tree
                 self.ct.add_move_to_tree(move_str)
                 # update the option menu? not necessary, since we're about to leave
-            self.state, self.board_state = self.cm.move_frwd(self.state, san)
+            self.state_pgn, self.state_str = self.cm.move_frwd(self.state_pgn, san)
             self.update_display()
 
     def move_frwd(self):
         if self.check_comment():
-            self.state, self.board_state = self.cm.move_frwd(self.state, self.c.next_move_str.get())
+            self.state_pgn, self.state_str = self.cm.move_frwd(self.state_pgn, self.c.next_move_str.get())
             self.update_display()
             self.close_all_but_current()
 
     def move_frwd_full(self):
         if self.check_comment():
-            self.state, self.board_state = self.cm.move_frwd_full(self.state)
+            self.state_pgn, self.state_str = self.cm.move_frwd_full(self.state_pgn)
             self.update_display()
             self.close_all_but_current()
 
     # END moves
 
     ##############################
-    # END change board_state
+    # END change board state
     ##############################
 
     def update_display(self):
-        self.bv.update_display(self.board_state["piece_distrib"])
-        self.c.update_display(self.board_state["has_parent"], self.board_state["variations"])
+        self.bv.update_display(self.state_str["piece_distrib"])
+        self.c.update_display(self.state_str["has_parent"], self.state_str["variations"])
         # make sure the appropriate tree node is selected based on the current move
         # and the appropriate variation of the move is secondary selected
         next_move = self.c.next_move_str.get()
         # for built-in
-        self.ct.update_tree(self.board_state["moves"], next_move)
-        self.cl.update_listing(self.board_state["moves"])
+        self.ct.update_tree(self.state_str["moves"], next_move)
+        self.cl.update_listing(self.state_str["moves"])
         self.update_ce()
         self.ct.horz_scrollbar_magic()
 
     def update_ce(self):
         if self.ce_root is not None:
-            comment = self.board_state["comment"]
+            comment = self.state_str["comment"]
             self.ce.editor.replace(1.0, END, comment)
             self.ce.save_button.configure(state=tk.DISABLED)
             self.ce.editor.edit_modified(False)
@@ -1277,7 +1273,7 @@ class App(object):
 
     def make_tree_builtin(self):
         # new tree for built-in
-        self.ct.make_tree(self.state["game"])
+        self.ct.make_tree(self.state_pgn["game"])
         self.ct.horz_scrollbar_magic()
 
     # when the next move menu changes, next_move_str changes bringing control to here.
