@@ -1,5 +1,6 @@
 # /usr/bin/python
 
+import io
 import tkinter as tk
 from tkinter import PhotoImage
 from tkinter import filedialog
@@ -17,6 +18,7 @@ from chess import pgn
 
 from comment_editor import *
 #try this:
+# from comment_editor import CommentEditor
 # import comment_editor
 
 #####################################
@@ -136,8 +138,20 @@ def init_pgn_state(game, vp):
     node = game
     return make_state_py(game, node), make_state_str(game, node) 
 
+def game_moves2node(game, moves):
+    node = game
+    for p in range(0, len(moves)):
+        ind = get_var_ind_from_san(node, moves[p])
+        node = node.variation(ind)
+    return node
+
 def calc_game_node(state_py, state_str):
-    return state_py["game"], state_py["node"]
+    pgn_str = io.StringIO(state_str["pgn_str"])
+    game = chess.pgn.read_game(pgn_str)
+    node = game_moves2node(game, state_str["moves"])
+    return game, node
+
+    # return state_py["game"], state_py["node"]
 
 def calc_san(pgn_node, start, destination):
     uci = file_rank2str(start.file, start.rank) + file_rank2str(destination.file, destination.rank)
@@ -204,11 +218,7 @@ class ChessModelAPI(object):
 
     def move_to(self, state_py, state_str, moves):
         game, node = calc_game_node(state_py, state_str)
-        node = game
-
-        for p in range(0, len(moves)):
-            ind = get_var_ind_from_san(node, moves[p])
-            node = node.variation(ind)
+        node = game_moves2node(game, moves)
         return make_state_py(game, node), make_state_str(game, node)
 
     def move_back_full(self, state_py, state_str):
