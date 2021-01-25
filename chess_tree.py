@@ -72,17 +72,17 @@ def print_pgn_node_recur(pgn_node, initial=False, ply_num=0):
         for p in range(0, len(pgn_node.variations)):
             print_pgn_node_recur(pgn_node.variations[p], ply_num=ply_num)
 
-# def report(state_pgn, state_str):
+# def report(state_py, state_str):
 #     # print('pgn:')
-#     # print(state_pgn.game)
+#     # print(state_py.game)
 #     # print('tree:')
-#     # print_pgn_node_recur(state_pgn.game, True)
+#     # print_pgn_node_recur(state_py.game, True)
 #     # print('listing:')
-#     # print_listing_vertical(state_pgn.node)
+#     # print_listing_vertical(state_py.node)
 #     # print('horizontal listing:')
-#     # print_listing_horizontal(state_pgn.node)
+#     # print_listing_horizontal(state_py.node)
 #     # print('hybrid horizontal tree:')
-#     # print_pgn_node_hybrid(state_pgn.node)
+#     # print_pgn_node_hybrid(state_py.node)
 #     pass
 
 # Critical code
@@ -116,6 +116,12 @@ def make_state_str(pgn_game, pgn_node):
     # report(state_str)
     return state_str
 
+def make_state_py(pgn_game, pgn_node):
+    state_py = {}
+    state_py["game"] = pgn_game
+    state_py["node"] = pgn_node
+    return state_py
+
 def set_headers(game, vp):
     if vp == 'W':
         game.headers["White"] = 'Me'
@@ -126,11 +132,9 @@ def set_headers(game, vp):
     return game
 
 def init_pgn_state(game, vp):
-    state_pgn = {}
     game = set_headers(game, vp)
-    state_pgn["game"] = game
-    state_pgn["node"] = game
-    return state_pgn, make_state_str(state_pgn["game"], state_pgn["node"]) 
+    node = game
+    return make_state_py(game, node), make_state_str(game, node) 
 
 def calc_game_node(state):
     return state["game"], state["node"]
@@ -198,72 +202,82 @@ class ChessModelAPI(object):
     # moves
     ###########################
 
-    def move_to(self, state_pgn, moves):
-        state_pgn["node"] = state_pgn["game"]
+    def move_to(self, state_py, moves):
+        game, node = calc_game_node(state_py)
+        node = game
 
         for p in range(0, len(moves)):
-            ind = get_var_ind_from_san(state_pgn["node"], moves[p])
-            state_pgn["node"] = state_pgn["node"].variation(ind)
-        return state_pgn, make_state_str(state_pgn["game"], state_pgn["node"])
+            ind = get_var_ind_from_san(node, moves[p])
+            node = node.variation(ind)
+        return make_state_py(game, node), make_state_str(game, node)
 
-    def move_back_full(self, state_pgn):
-        state_pgn["node"] = state_pgn["game"]
-        return state_pgn, make_state_str(state_pgn["game"], state_pgn["node"])
+    def move_back_full(self, state_py):
+        game, node = calc_game_node(state_py)
+        node = game
+        return make_state_py(game, node), make_state_str(game, node)
 
-    def move_back(self, state_pgn):
-        state_pgn["node"] = state_pgn["node"].parent
-        return state_pgn, make_state_str(state_pgn["game"], state_pgn["node"])
+    def move_back(self, state_py):
+        game, node = calc_game_node(state_py)
+        node = node.parent
+        return make_state_py(game, node), make_state_str(game, node)
 
-    def move_frwd(self, state_pgn, san):
-        ind = get_var_ind_from_san(state_pgn["node"], san)
-        state_pgn["node"] = state_pgn["node"].variations[ind]
-        return state_pgn, make_state_str(state_pgn["game"], state_pgn["node"])
+    def move_frwd(self, state_py, san):
+        game, node = calc_game_node(state_py)
+        ind = get_var_ind_from_san(node, san)
+        node = node.variations[ind]
+        return make_state_py(game, node), make_state_str(game, node)
 
-    def move_frwd_full(self, state_pgn):
-        while not state_pgn["node"].is_end():
-            state_pgn["node"] = state_pgn["node"].variations[0]
-        return state_pgn, make_state_str(state_pgn["game"], state_pgn["node"])
+    def move_frwd_full(self, state_py):
+        game, node = calc_game_node(state_py)
+        while not node.is_end():
+            node = node.variations[0]
+        return make_state_py(game, node), make_state_str(game, node)
 
-    def set_comment(self, state_pgn, comment):
-        state_pgn["node"].comment = comment
-        return state_pgn, make_state_str(state_pgn["game"], state_pgn["node"])
+    def set_comment(self, state_py, comment):
+        game, node = calc_game_node(state_py)
+        node.comment = comment
+        return make_state_py(game, node), make_state_str(game, node)
 
-    def diddle_var(self, state_pgn, diddle, san):
+    def diddle_var(self, state_py, diddle, san):
+        game, node = calc_game_node(state_py)
         print(diddle + 'Var')
-        ind = get_var_ind_from_san(state_pgn["node"], san)
+        ind = get_var_ind_from_san(node, san)
         if diddle == 'remove':
-            state_pgn["node"].remove_variation(state_pgn["node"].variations[ind].move)
+            node.remove_variation(node.variations[ind].move)
         elif diddle == 'promote2main':
-            state_pgn["node"].promote_to_main(state_pgn["node"].variations[ind].move)
+            node.promote_to_main(node.variations[ind].move)
         elif diddle == 'promote':
-            state_pgn["node"].promote(state_pgn["node"].variations[ind].move)
+            node.promote(node.variations[ind].move)
         elif diddle == 'demote':
-            state_pgn["node"].demote(state_pgn["node"].variations[ind].move)
-        return state_pgn, make_state_str(state_pgn["game"], state_pgn["node"])
+            node.demote(node.variations[ind].move)
+        return make_state_py(game, node), make_state_str(game, node)
 
     ####################################
     # Doesn't change board state
     ####################################
 
-    def move_add(self, state_pgn, start, destination):
+    def move_add(self, state_py, start, destination):
+        game, node = calc_game_node(state_py)
         print('move:', start.file, start.rank, destination.file, destination.rank)
         uci = file_rank2str(start.file, start.rank) + file_rank2str(destination.file, destination.rank)
-        san = calc_san(state_pgn["node"], start, destination)
-        if state_pgn["node"].has_variation(chess.Move.from_uci(uci)):
+        san = calc_san(node, start, destination)
+        if node.has_variation(chess.Move.from_uci(uci)):
             added = False
-            node = state_pgn["node"].variation(chess.Move.from_uci(uci))
+            new_node = node.variation(chess.Move.from_uci(uci))
         else:
             added = True
-            node = state_pgn["node"].add_variation(chess.Move.from_uci(uci))
-        return state_pgn, added, san, print_pgn_node(node)
+            new_node = node.add_variation(chess.Move.from_uci(uci))
+            # node.add_variation(chess.Move.from_uci(uci))
+        return make_state_py(game, node), make_state_str(game, node), added, san, print_pgn_node(new_node)
 
-    def set_headers(self, state_pgn, vp):
-        state_pgn["game"] = set_headers(state_pgn["game"], vp)
-        return state_pgn
+    def set_headers(self, state_py, vp):
+        game, node = calc_game_node(state_py)
+        game = set_headers(game, vp)
+        return make_state_py(game, node), make_state_str(game, node)
 
-    def save_pgn(self, state_pgn, filename):
+    def save_pgn(self, state_py, filename):
         f = open(filename, 'w')
-        print(state_pgn["game"], file=f)
+        print(state_py["game"], file=f)
         f.close()
 
 ####################################
@@ -943,7 +957,7 @@ class App(object):
         # Create the chess model (cm)
         self.cm = ChessModelAPI()
 
-        self.state_pgn, self.state_str = self.cm.init_state(vp)
+        self.state_py, self.state_str = self.cm.init_state(vp)
 
         self.top = Frame(self.parent)
         # self.top.pack(side=TOP, fill=BOTH, expand=True)
@@ -1037,8 +1051,8 @@ class App(object):
         if filename != '':
             # self.vp is a control variable attached to the White/Black radio buttons
             vp = color_bool2char(self.vp.get())
-            self.state_pgn, self.state_str = self.cm.load_pgn(filename, vp)
-            print(self.state_pgn["game"])
+            self.state_py, self.state_str = self.cm.load_pgn(filename, vp)
+            print(self.state_py["game"])
             self.update_display()
             self.make_tree_builtin()
         # put the focus back on the tree so keyboard works.
@@ -1061,8 +1075,8 @@ class App(object):
         vp = color_bool2char(self.vp.get())
         self.bv.set_player(vp)
         self.bv.update_display(self.state_str["piece_distrib"])
-        self.state_pgn = self.cm.set_headers(self.state_pgn, vp)
-        self.ct.update_tree_node(self.state_pgn["game"], self.ct.get_root_node())
+        self.state_py, self.state_str = self.cm.set_headers(self.state_py, vp)
+        self.ct.update_tree_node(self.state_py["game"], self.ct.get_root_node())
 
     # close the comment window when closing main window
     def on_closing(self):
@@ -1104,13 +1118,13 @@ class App(object):
         # get filename
         filename = filedialog.asksaveasfilename(defaultextension='.pgn')
         if filename != '':
-            self.cm.save_pgn(self.state_pgn, filename)
+            self.cm.save_pgn(self.state_py, filename)
 
     def handle_cl_click(self, event):
         moves = self.cl.handle_click(event)
         print(moves)
         if len(moves) > 0:
-            self.state_pgn, self.state_str = self.cm.move_to(self.state_pgn, moves)
+            self.state_py, self.state_str = self.cm.move_to(self.state_py, moves)
             self.update_display()
             self.close_all_but_current()
 
@@ -1186,14 +1200,14 @@ class App(object):
         comment = self.ce.editor.get(1.0, END)
         comment = comment[0:-1]
         print('comment:', comment)
-        self.state_pgn, self.state_str = self.cm.set_comment(self.state_pgn, comment)
+        self.state_py, self.state_str = self.cm.set_comment(self.state_py, comment)
         self.ce.save_button.configure(state=tk.DISABLED)
         self.ce.editor.edit_modified(False)
-        self.ct.update_tree_node(self.state_pgn["node"], self.ce.tree_node)
+        self.ct.update_tree_node(self.state_py["node"], self.ce.tree_node)
 
     def diddle_var(self, diddle):
         san = self.c.next_move_str.get()
-        self.state_pgn, self.state_str = self.cm.diddle_var(self.state_pgn, diddle, san)
+        self.state_py, self.state_str = self.cm.diddle_var(self.state_py, diddle, san)
         self.diddle_var_tree(diddle)
         # self.c.update_display(self.state_str["has_parent"], self.state_str["variations"])
         if diddle == 'remove':
@@ -1208,42 +1222,42 @@ class App(object):
             if self.check_comment():
                 # get the moves from the beginning of the game to the selected tree node
                 moves = self.ct.get_tree_moves()
-                self.state_pgn, self.state_str = self.cm.move_to(self.state_pgn, moves)
+                self.state_py, self.state_str = self.cm.move_to(self.state_py, moves)
                 self.update_display()
 
     # from buttons
     def move_back_full(self):
         if self.check_comment():
-            self.state_pgn, self.state_str = self.cm.move_back_full(self.state_pgn)
+            self.state_py, self.state_str = self.cm.move_back_full(self.state_py)
             self.update_display()
             self.close_all_but_current()
 
     def move_back(self):
         if self.check_comment():
-            self.state_pgn, self.state_str = self.cm.move_back(self.state_pgn)
+            self.state_py, self.state_str = self.cm.move_back(self.state_py)
             self.update_display()
             self.close_all_but_current()
 
     # from board click
     def move(self, click1, click2):
         if self.check_comment():
-            self.state_pgn, added, san, move_str = self.cm.move_add(self.state_pgn, click1, click2)
+            self.state_py, self.state_str, added, san, move_str = self.cm.move_add(self.state_py, click1, click2)
             if added:
                 # update the tree
                 self.ct.add_move_to_tree(move_str)
                 # update the option menu? not necessary, since we're about to leave
-            self.state_pgn, self.state_str = self.cm.move_frwd(self.state_pgn, san)
+            self.state_py, self.state_str = self.cm.move_frwd(self.state_py, san)
             self.update_display()
 
     def move_frwd(self):
         if self.check_comment():
-            self.state_pgn, self.state_str = self.cm.move_frwd(self.state_pgn, self.c.next_move_str.get())
+            self.state_py, self.state_str = self.cm.move_frwd(self.state_py, self.c.next_move_str.get())
             self.update_display()
             self.close_all_but_current()
 
     def move_frwd_full(self):
         if self.check_comment():
-            self.state_pgn, self.state_str = self.cm.move_frwd_full(self.state_pgn)
+            self.state_py, self.state_str = self.cm.move_frwd_full(self.state_py)
             self.update_display()
             self.close_all_but_current()
 
@@ -1277,7 +1291,7 @@ class App(object):
 
     def make_tree_builtin(self):
         # new tree for built-in
-        self.ct.make_tree(self.state_pgn["game"])
+        self.ct.make_tree(self.state_py["game"])
         self.ct.horz_scrollbar_magic()
 
     # when the next move menu changes, next_move_str changes bringing control to here.
