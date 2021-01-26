@@ -128,6 +128,10 @@ def make_state_str(pgn_game, pgn_node):
     state_str["node_py"] = pgn_node
     return state_str
 
+def make_tree(game):
+    tree = {}
+    return tree
+
 def set_headers(game, vp):
     if vp == 'W':
         game.headers["White"] = 'Me'
@@ -144,8 +148,8 @@ def init_pgn_state(game, vp):
 
 def game_moves2node(game, moves):
     node = game
-    for p in range(0, len(moves)):
-        ind = get_var_ind_from_san(node, moves[p])
+    for move in moves:
+        ind = get_var_ind_from_san(node, move)
         node = node.variation(ind)
     return node
 
@@ -189,9 +193,10 @@ def make_san_node_str(pgn_node, init_ply_num=0):
     if not pgn_node.parent.board().turn:
         turn_str += '..'
     turn_str += ' '
-    spaces = ''
-    for q in range(0, ply_num-(init_ply_num+1)):
-        spaces += '  '
+    # spaces = ''
+    # for q in range(0, ply_num-(init_ply_num+1)):
+    #     spaces += '  '
+    spaces = (ply_num-(init_ply_num+1)) * '  '
     end_str = ""
     if pgn_node.is_end():
         end_str = " *"
@@ -206,13 +211,6 @@ class ChessModelAPI(object):
 
     def init_state(self, vp):
         game = chess.pgn.Game()
-        return init_pgn_state(game, vp)
-
-    def load_pgn(self, filename, vp):
-        f = open(filename)
-        game = chess.pgn.read_game(f)
-        # !!!Error handling
-        f.close()
         return init_pgn_state(game, vp)
 
     ###########################
@@ -288,10 +286,9 @@ class ChessModelAPI(object):
         game = set_headers(game, vp)
         return make_state_str(game, node)
 
-    def save_pgn(self, state_str, filename):
-        f = open(filename, 'w')
-        print(state_str["game_py"], file=f)
-        f.close()
+    def make_tree(self, state_str):
+        game, _ = calc_game_node(state_str)
+        return make_tree(game) 
 
 ####################################
 # GUI BOARD
@@ -715,7 +712,8 @@ class ChessTree(tk.Frame):
         self.tree_clicked = False
         # self.tree.configure(takefocus=1)
 
-    def make_tree(self, game, root_tree_node_str):
+    def make_tree(self, game, root_tree_node_str, tree_dict):
+        print(tree_dict)
         # empty tree
         children = self.tree.get_children('')
         for child in children:
@@ -1040,30 +1038,13 @@ class App(object):
         self.ct = ChessTree(self.bottom)
         self.ct.tree.bind("<<TreeviewSelect>>", self.handle_tree_select_builtin)
         # new tree for built-in
-        self.make_tree_builtin()
+        self.make_tree_builtin({})
         # initialize separate windows, which don't exist yet
         self.ce_root = None
 
         # initialize some variables
         self.click1 = []
         self.legal_dests = []
-        # self.click1_b = False
-
-    def load_pgn(self):
-        # get filename
-        filename = filedialog.askopenfilename(filetypes=[('pgn files', '*.pgn')])
-        print("loading ", filename)
-        if filename != '':
-            # self.vp is a control variable attached to the White/Black radio buttons
-            vp = color_bool2char(self.vp.get())
-            self.state_str = self.cm.load_pgn(filename, vp)
-            print(self.state_str["game_py"])
-            self.update_display()
-            self.make_tree_builtin()
-        # put the focus back on the tree so keyboard works.
-        self.parent.lift()
-        # self.ct.tree.focus_force()
-        self.ct.tree.focus_set()
 
     def open_all(self):
         self.ct.open_all(True)
@@ -1097,7 +1078,7 @@ class App(object):
             self.ce = CommentEditor(self.ce_root)
 
             screenw = self.parent.winfo_screenwidth()
-            screenh = self.parent.winfo_screenheight()
+            # screenh = self.parent.winfo_screenheight()
             self.ce_root.update_idletasks()
             # geo = [w, h, x, y]
             ce_geo = geo_str2list(self.ce_root.geometry())
@@ -1118,12 +1099,6 @@ class App(object):
         # low level tk stuff
         self.ce_root.lift()
         self.ce_root.update()
-
-    def save_pgn(self):
-        # get filename
-        filename = filedialog.asksaveasfilename(defaultextension='.pgn')
-        if filename != '':
-            self.cm.save_pgn(self.state_str, filename)
 
     def handle_cl_click(self, event):
         moves = self.cl.handle_click(event)
@@ -1294,9 +1269,9 @@ class App(object):
             # otherwise, we could just use the selected node at that time.
             self.ce.tree_node = self.ct.get_selected_node()
 
-    def make_tree_builtin(self):
+    def make_tree_builtin(self, tree_dict):
         # new tree for built-in
-        self.ct.make_tree(self.state_str["game_py"], self.state_str["root_tree_node_str"])
+        self.ct.make_tree(self.state_str["game_py"], self.state_str["root_tree_node_str"], tree_dict)
         self.ct.horz_scrollbar_magic()
 
     # when the next move menu changes, next_move_str changes bringing control to here.
@@ -1322,6 +1297,36 @@ class App(object):
         self.ce_root.destroy()
         self.ce_root = None
 
+    def load_pgn(self):
+        # get filename
+        filename = filedialog.askopenfilename(filetypes=[('pgn files', '*.pgn')])
+        print("loading ", filename)
+        if filename != '':
+   #        # !!!Error handling
+            with open(filename,"r") as f:
+                self.state_str["pgn_str"] = f.read()
+            self.state_str["moves"] = []
+            self.state_str = self.cm.move_back_full(self.state_str)
+            tree_dict = self.cm.make_tree(self.state_str)
+
+            self.update_display()
+            self.make_tree_builtin(tree_dict)
+        # put the focus back on the tree so keyboard works.
+        self.parent.lift()
+        # self.ct.tree.focus_force()
+        self.ct.tree.focus_set()
+
+    def save_pgn(self):
+        # get filename
+        filename = filedialog.asksaveasfilename(defaultextension='.pgn')
+        if filename != '':
+            f = open(filename, 'w')
+            print(self.state_str["pgn_str"], file=f)
+            f.close()
+            # This no doubt won't work without "import chess"
+            # f = open(filename+"2", 'w')
+            # print(self.state_str["game_py"], file=f)
+            # f.close()
 
 if __name__ == "__main__":
     # if not os.path.exists(DATA_DIR):
