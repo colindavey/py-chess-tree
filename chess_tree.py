@@ -115,7 +115,15 @@ def make_state_str(pgn_game, pgn_node):
     state_str["has_parent"] = pgn_node.parent is not None
     state_str["moves"] = pgn_node2moves(pgn_node)
     state_str["pgn_str"] = game2pgn_str(pgn_game)
-
+    state_str["player_white"] = pgn_game.headers['White']
+    state_str["player_black"] = pgn_game.headers['Black']
+    state_str["root_tree_node_str"] = \
+        'White: ' + pgn_game.headers['White'] + '. Black: ' + pgn_game.headers['Black'] + '.' + \
+        make_brief_comment_str(pgn_game.comment)
+    if pgn_node.parent is None:
+        state_str["tree_node_str"] = state_str["root_tree_node_str"]
+    else:
+        state_str["tree_node_str"] = make_san_node_str(pgn_node)
     state_str["game_py"] = pgn_game
     state_str["node_py"] = pgn_node
     return state_str
@@ -707,16 +715,13 @@ class ChessTree(tk.Frame):
         self.tree_clicked = False
         # self.tree.configure(takefocus=1)
 
-    def get_init_node_str(self, game):
-        return 'White: ' + game.headers['White'] + '. Black: ' + game.headers['Black'] + '.'
-
-    def make_tree(self, game):
+    def make_tree(self, game, root_tree_node_str):
         # empty tree
         children = self.tree.get_children('')
         for child in children:
             self.tree.delete(child)
         # insert initial tree node, and pass it in as 2nd parameter
-        initial_node = self.tree.insert('', "end", text=self.get_init_node_str(game), open=True, tags='all')
+        initial_node = self.tree.insert('', "end", text=root_tree_node_str, open=True, tags='all')
         self.tree_pgn_node_recur(game, initial_node, True)
 
     def tree_pgn_node_recur(self, pgn_node, parent, initial=False):
@@ -735,14 +740,9 @@ class ChessTree(tk.Frame):
     def handle_tree_click(self, event):
         self.tree_clicked = True
 
-    def update_tree_node(self, pgn_node, tree_node):
-        if pgn_node.parent is None:
-            the_str = self.get_init_node_str(pgn_node) + ' ' + make_brief_comment_str(pgn_node.comment)
-        else:
-            the_str = make_san_node_str(pgn_node)
-        # selected_node = self.get_selected_node()
+    def update_tree_node(self, str, tree_node):
         selected_node = tree_node
-        self.tree.item(selected_node, text=the_str)
+        self.tree.item(selected_node, text=str)
 
     def handle_tree_select(self):
         if self.tree_clicked:
@@ -1081,7 +1081,7 @@ class App(object):
         self.bv.set_player(vp)
         self.bv.update_display(self.state_str["piece_distrib"])
         self.state_str = self.cm.set_headers(self.state_str, vp)
-        self.ct.update_tree_node(self.state_str["game_py"], self.ct.get_root_node())
+        self.ct.update_tree_node(self.state_str["root_tree_node_str"], self.ct.get_root_node())
 
     # close the comment window when closing main window
     def on_closing(self):
@@ -1208,7 +1208,7 @@ class App(object):
         self.state_str = self.cm.set_comment(self.state_str, comment)
         self.ce.save_button.configure(state=tk.DISABLED)
         self.ce.editor.edit_modified(False)
-        self.ct.update_tree_node(self.state_str["node_py"], self.ce.tree_node)
+        self.ct.update_tree_node(self.state_str["tree_node_str"], self.ce.tree_node)
 
     def diddle_var(self, diddle):
         san = self.c.next_move_str.get()
@@ -1296,7 +1296,7 @@ class App(object):
 
     def make_tree_builtin(self):
         # new tree for built-in
-        self.ct.make_tree(self.state_str["game_py"])
+        self.ct.make_tree(self.state_str["game_py"], self.state_str["root_tree_node_str"])
         self.ct.horz_scrollbar_magic()
 
     # when the next move menu changes, next_move_str changes bringing control to here.
