@@ -2,12 +2,10 @@
 
 import io
 import tkinter as tk
-from tkinter import PhotoImage
-from tkinter import filedialog
-from tkinter import ttk
 from tkinter import messagebox
-# from tkinter import font
 import tkinter.font as tkfont
+import tkinter.ttk as tktree
+import tkinter.filedialog as tkfiledialog
 
 import os
 import os.path
@@ -16,10 +14,7 @@ from chess import pgn
 # !!!git this for tooltips
 # import wckToolTips
 
-from comment_editor import *
-#try this:
-# from comment_editor import CommentEditor
-# import comment_editor
+from comment_editor import CommentEditor
 
 #####################################
 # Game Model Utility Functions
@@ -193,9 +188,6 @@ def make_san_node_str(pgn_node, init_ply_num=0):
     if not pgn_node.parent.board().turn:
         turn_str += '..'
     turn_str += ' '
-    # spaces = ''
-    # for q in range(0, ply_num-(init_ply_num+1)):
-    #     spaces += '  '
     spaces = (ply_num-(init_ply_num+1)) * '  '
     end_str = ""
     if pgn_node.is_end():
@@ -355,7 +347,7 @@ class BoardView(tk.Frame):
             if not os.path.exists(f):
                 print("Error: Cannot find image file: %s at %s - aborting" % (TILES[image_file_name], f))
                 exit(-1)
-            self.images[image_file_name] = PhotoImage(file=f)
+            self.images[image_file_name] = tk.PhotoImage(file=f)
             # This opens each of the image files, converts the data into a form that Tkinter
             # can use, then stores that converted form in the attribute self.images
             # self.images is a dictionary, keyed by the letters we used in our model to
@@ -506,11 +498,11 @@ def geo_str2list(geo_str):
 class ChessListing(tk.Frame):
     def __init__(self, parent=None, do_grid=False):
         tk.Frame.__init__(self, parent)
-        self.table = ttk.Treeview(parent)
-        ysb = ttk.Scrollbar(parent, orient='vertical', command=self.table.yview)
+        self.table = tktree.Treeview(parent)
+        ysb = tktree.Scrollbar(parent, orient='vertical', command=self.table.yview)
         self.table.configure(yscroll=ysb.set)
-        ysb.pack(side=RIGHT, fill=Y)
-        self.table.pack(side=BOTTOM, fill=BOTH, expand=True)
+        ysb.pack(side=tk.RIGHT, fill=tk.Y)
+        self.table.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
         self.pack()
 
         self.table['columns'] = ('w', 'b')
@@ -572,10 +564,10 @@ class Controls(tk.Frame):
         tk.Frame.__init__(self, parent)
 
         self.backFullBtn = tk.Button(self, text="|<")
-        self.backFullBtn.pack(side=LEFT)
+        self.backFullBtn.pack(side=tk.LEFT)
 
         self.backBtn = tk.Button(self, text="<")
-        self.backBtn.pack(side=LEFT)
+        self.backBtn.pack(side=tk.LEFT)
 
         # next_move_str is a tk "control variable"
         # see http://effbot.org/tkinterbook/variable.htm
@@ -585,37 +577,37 @@ class Controls(tk.Frame):
         # self.nextMoveOMen.config(width=7)
         self.nextMoveOMen.config(width=0)
         # self.nextMoveOMen.pack(side=LEFT, fill=X, expand=True)
-        self.nextMoveOMen.pack(side=LEFT)
+        self.nextMoveOMen.pack(side=tk.LEFT)
 
         self.frwdBtn = tk.Button(self, text=">")
-        self.frwdBtn.pack(side=LEFT)
+        self.frwdBtn.pack(side=tk.LEFT)
 
         self.frwdFullBtn = tk.Button(self, text=">|")
-        self.frwdFullBtn.pack(side=LEFT)
+        self.frwdFullBtn.pack(side=tk.LEFT)
 
         self.removeVarBtn = tk.Button(self, text="x")
-        self.removeVarBtn.pack(side=LEFT)
+        self.removeVarBtn.pack(side=tk.LEFT)
 
         self.promote2MainVarBtn = tk.Button(self, text="^^")
-        self.promote2MainVarBtn.pack(side=LEFT)
+        self.promote2MainVarBtn.pack(side=tk.LEFT)
 
         self.promoteVarBtn = tk.Button(self, text="^")
-        self.promoteVarBtn.pack(side=LEFT)
+        self.promoteVarBtn.pack(side=tk.LEFT)
 
         self.demoteVarBtn = tk.Button(self, text="v")
-        self.demoteVarBtn.pack(side=LEFT)
+        self.demoteVarBtn.pack(side=tk.LEFT)
 
         # self.treeBtn = tk.Button(self, text="Tree")
-        # self.treeBtn.pack(side=LEFT)
+        # self.treeBtn.pack(side=tk.LEFT)
 
         self.commentBtn = tk.Button(self, text="{}")
-        self.commentBtn.pack(side=LEFT)
+        self.commentBtn.pack(side=tk.LEFT)
 
         self.closeBtn = tk.Button(self, text="C")
-        self.closeBtn.pack(side=LEFT)
+        self.closeBtn.pack(side=tk.LEFT)
 
         self.openBtn = tk.Button(self, text="O")
-        self.openBtn.pack(side=LEFT)
+        self.openBtn.pack(side=tk.LEFT)
 
         self.pack()
 
@@ -671,12 +663,12 @@ class ChessTree(tk.Frame):
         # "'App' object has no attribute 'pack'"
         ####################
         if do_grid:
-            Grid.columnconfigure(parent, 0, weight=1)
-            Grid.rowconfigure(parent, 0, weight=1)
+            tk.Grid.columnconfigure(parent, 0, weight=1)
+            tk.Grid.rowconfigure(parent, 0, weight=1)
         ####################
-        self.tree = ttk.Treeview(parent, show='tree')
-        xsb = ttk.Scrollbar(parent, orient='horizontal', command=self.tree.xview)
-        ysb = ttk.Scrollbar(parent, orient='vertical', command=self.tree.yview)
+        self.tree = tktree.Treeview(parent, show='tree')
+        xsb = tktree.Scrollbar(parent, orient='horizontal', command=self.tree.xview)
+        ysb = tktree.Scrollbar(parent, orient='vertical', command=self.tree.yview)
         # self.tree.configure(yscroll=ysb.set, xscroll=xsb.set)
         self.tree.configure(xscroll=xsb.set)
         self.tree.configure(yscroll=ysb.set)
@@ -686,13 +678,13 @@ class ChessTree(tk.Frame):
             # self.tree.pack(expand=1, fill=BOTH)
             # self.tree.grid(expand=1, fill=BOTH)
 
-            self.tree.grid(row=0, column=0, sticky=W+E+N+S)
+            self.tree.grid(row=0, column=0, sticky=tk.W+tk.E+tk.N+tk.S)
             xsb.grid(row=1, column=0, sticky='ew')
             ysb.grid(row=0, column=1, sticky='ns')
         else:
-            xsb.pack(side=BOTTOM, fill=X)
-            ysb.pack(side=RIGHT, fill=Y)
-            self.tree.pack(side=BOTTOM, fill=BOTH, expand=True)
+            xsb.pack(side=tk.BOTTOM, fill=tk.X)
+            ysb.pack(side=tk.RIGHT, fill=tk.Y)
+            self.tree.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
             self.pack()
         ####################
 
@@ -728,8 +720,8 @@ class ChessTree(tk.Frame):
             the_str = make_san_node_str(pgn_node)
             parent = self.tree.insert(parent, "end", text=the_str, open=True, tags='all')
         if not pgn_node.is_end():
-            for p in range(0, len(pgn_node.variations)):
-                self.tree_pgn_node_recur(pgn_node.variations[p], parent)
+            for variation in pgn_node.variations:
+                self.tree_pgn_node_recur(variation, parent)
 
     # tree changes due to clicks or key presses allow actions on tree selection changes
     # otherwise not
@@ -962,14 +954,14 @@ class App(object):
 
         self.state_str = self.cm.init_state(vp)
 
-        self.top = Frame(self.parent)
+        self.top = tk.Frame(self.parent)
         # self.top.pack(side=TOP, fill=BOTH, expand=True)
         # self.top.pack(side=TOP, fill=BOTH)
-        self.top.pack(side=TOP)
+        self.top.pack(side=tk.TOP)
 
-        self.left = Frame(self.top)
-        # self.left.pack(side=LEFT, fill=BOTH, expand=True)
-        self.left.pack(side=LEFT)
+        self.left = tk.Frame(self.top)
+        # self.left.pack(side=tk.LEFT, fill=BOTH, expand=True)
+        self.left.pack(side=tk.LEFT)
 
         # Create the board view (bv)
         self.bv = BoardView(self.left, vp=vp)
@@ -1000,41 +992,41 @@ class App(object):
         self.c.closeBtn.config(command=self.close_all_but_current)
 
         # start of right frame for vertical listing
-        self.right = Frame(self.top)
-        self.right.pack(side=LEFT, fill=BOTH, expand=True)
+        self.right = tk.Frame(self.top)
+        self.right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        self.right_top = Frame(self.right)
-        self.right_top.pack(side=TOP)
+        self.right_top = tk.Frame(self.right)
+        self.right_top.pack(side=tk.TOP)
         self.loadBtn = tk.Button(self.right_top, text="Load")
-        self.loadBtn.pack(side=LEFT)
+        self.loadBtn.pack(side=tk.LEFT)
         self.saveBtn = tk.Button(self.right_top, text="Save")
-        self.saveBtn.pack(side=LEFT)
+        self.saveBtn.pack(side=tk.LEFT)
 
         self.loadBtn.config(command=self.load_pgn)
         self.saveBtn.config(command=self.save_pgn)
 
-        self.right_top2 = Frame(self.right)
-        self.right_top2.pack(side=TOP)
+        self.right_top2 = tk.Frame(self.right)
+        self.right_top2.pack(side=tk.TOP)
 
-        self.vp = IntVar()
+        self.vp = tk.IntVar()
         if vp == 'W':
             self.vp.set(1)
         else:
             self.vp.set(0)
 
-        self.rb_w = Radiobutton(self.right_top2, text="White", variable=self.vp, value=1, command=self.set_player)
-        self.rb_w.pack(side=LEFT)
-        self.rb_b = Radiobutton(self.right_top2, text="Black", variable=self.vp, value=0, command=self.set_player)
-        self.rb_b.pack(side=LEFT)
+        self.rb_w = tk.Radiobutton(self.right_top2, text="White", variable=self.vp, value=1, command=self.set_player)
+        self.rb_w.pack(side=tk.LEFT)
+        self.rb_b = tk.Radiobutton(self.right_top2, text="Black", variable=self.vp, value=0, command=self.set_player)
+        self.rb_b.pack(side=tk.LEFT)
 
         # self.cl = tk.Label(self.right, text='Game listing will go here.', bg='#eee')
-        # self.cl.pack(side=TOP, fill=BOTH, expand=True)
+        # self.cl.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         self.cl = ChessListing(self.right)
         self.cl.table.bind("<Button-1>", self.handle_cl_click)
 
         # Create the chess tree (ct)
-        self.bottom = Frame(self.parent)
-        self.bottom.pack(side=BOTTOM, fill=BOTH, expand=True)
+        self.bottom = tk.Frame(self.parent)
+        self.bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
         self.ct = ChessTree(self.bottom)
         self.ct.tree.bind("<<TreeviewSelect>>", self.handle_tree_select_builtin)
         # new tree for built-in
@@ -1072,7 +1064,7 @@ class App(object):
 
     def handle_comment_button(self):
         if self.ce_root is None:
-            self.ce_root = Tk()
+            self.ce_root = tk.Tk()
             self.ce_root.title(self.title_str + '. Comment editor')
             self.ce_root.protocol("WM_DELETE_WINDOW", self.on_closing_comment_editor)
             self.ce = CommentEditor(self.ce_root)
@@ -1177,7 +1169,7 @@ class App(object):
     # change board state
     ##############################
     def save_comment(self):
-        comment = self.ce.editor.get(1.0, END)
+        comment = self.ce.editor.get(1.0, tk.END)
         comment = comment[0:-1]
         print('comment:', comment)
         self.state_str = self.cm.set_comment(self.state_str, comment)
@@ -1262,7 +1254,7 @@ class App(object):
     def update_ce(self):
         if self.ce_root is not None:
             comment = self.state_str["comment"]
-            self.ce.editor.replace(1.0, END, comment)
+            self.ce.editor.replace(1.0, tk.END, comment)
             self.ce.save_button.configure(state=tk.DISABLED)
             self.ce.editor.edit_modified(False)
             # this is only necessary in case the user makes the next node by clicking on the tree.
@@ -1299,7 +1291,7 @@ class App(object):
 
     def load_pgn(self):
         # get filename
-        filename = filedialog.askopenfilename(filetypes=[('pgn files', '*.pgn')])
+        filename = tkfiledialog.askopenfilename(filetypes=[('pgn files', '*.pgn')])
         print("loading ", filename)
         if filename != '':
    #        # !!!Error handling
@@ -1318,7 +1310,7 @@ class App(object):
 
     def save_pgn(self):
         # get filename
-        filename = filedialog.asksaveasfilename(defaultextension='.pgn')
+        filename = tkfiledialog.asksaveasfilename(defaultextension='.pgn')
         if filename != '':
             f = open(filename, 'w')
             print(self.state_str["pgn_str"], file=f)

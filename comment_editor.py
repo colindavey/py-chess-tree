@@ -1,12 +1,11 @@
 __author__ = 'colindavey'
 import tkinter as tk
-from tkinter import *
 
 def editor2editor(ed1, ed2):
-    the_string = ed1.get(1.0, END)
+    the_string = ed1.get(1.0, tk.END)
     # this is needed to strip the newline that mysteriously is appended
     the_string = the_string[0:-1]
-    ed2.replace(1.0, END, the_string)
+    ed2.replace(1.0, tk.END, the_string)
 
 
 class CommentEditor(tk.Frame):
@@ -14,21 +13,21 @@ class CommentEditor(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.parent = parent
 
-        self.f1 = Frame(parent)
-        self.f1.pack(side=TOP, fill=BOTH, expand=True)
+        self.f1 = tk.Frame(parent)
+        self.f1.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         self.editor = tk.Text(self.f1, undo=True)
 
-        self.editor.pack(side=LEFT, fill=BOTH, expand=True)
+        self.editor.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.editor.bind("<<Modified>>", self.handle_modified)
 
-        self.scroll = Scrollbar(self.f1)
-        self.scroll.pack(side=LEFT, fill=Y)
+        self.scroll = tk.Scrollbar(self.f1)
+        self.scroll.pack(side=tk.LEFT, fill=tk.Y)
 
         self.scroll.config(command=self.editor.yview)
         self.editor.config(yscrollcommand=self.scroll.set)
 
         self.save_button = tk.Button(parent, text='Save')
-        self.save_button.pack(side=BOTTOM)
+        self.save_button.pack(side=tk.BOTTOM)
 
         self.pack()
         self.editor.focus()
@@ -72,7 +71,7 @@ class CommentEditorApp(object):
     def handle_button(self):
         print('{} button')
         if self.ce_root is None:
-            self.ce_root = Tk()
+            self.ce_root = tk.Tk()
             self.ce_root.protocol("WM_DELETE_WINDOW", self.on_closing_comment_editor)
             self.ce = CommentEditor(self.ce_root)
             self.ce.save_button.config(command=self.save_comment)
