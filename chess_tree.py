@@ -1299,6 +1299,7 @@ class App(object):
                 self.state_str["pgn_str"] = f.read()
             self.state_str["moves"] = []
             self.state_str = self.cm.move_back_full(self.state_str)
+            self.set_player()
             tree_dict = self.cm.make_tree(self.state_str)
 
             self.update_display()
