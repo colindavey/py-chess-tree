@@ -112,20 +112,35 @@ def make_state_str(pgn_game, pgn_node):
     state_str["pgn_str"] = game2pgn_str(pgn_game)
     state_str["player_white"] = pgn_game.headers['White']
     state_str["player_black"] = pgn_game.headers['Black']
-    state_str["root_tree_node_str"] = \
-        'White: ' + pgn_game.headers['White'] + '. Black: ' + pgn_game.headers['Black'] + '.' + \
-        make_brief_comment_str(pgn_game.comment)
+    state_str["root_node_str"] = make_root_node_str(pgn_game)
     if pgn_node.parent is None:
-        state_str["tree_node_str"] = state_str["root_tree_node_str"]
+        state_str["tree_node_str"] = state_str["root_node_str"]
     else:
         state_str["tree_node_str"] = make_san_node_str(pgn_node)
     state_str["game_py"] = pgn_game
     state_str["node_py"] = pgn_node
     return state_str
 
-def make_tree(game):
+def make_root_node_str(game_py):
+    return 'White: ' + game_py.headers['White'] + '. Black: ' + game_py.headers['Black'] + '.' + \
+        make_brief_comment_str(game_py.comment)
+
+def make_tree_dict(game):
+    return make_tree_dict_recur(game)
+
+def make_tree_dict_recur(node_py):
     tree = {}
-    return tree
+    if not node_py.parent is not None:
+        tree["label"] = make_root_node_str(node_py)
+    else: 
+        tree["label"] = make_san_node_str(node_py)
+    tree["children"] = []
+    if node_py.is_end():
+        return tree
+    else:
+        for variation in node_py.variations:
+            tree["children"].append(make_tree_dict_recur(variation))
+        return tree
 
 def set_headers(game, vp):
     if vp == 'W':
@@ -280,7 +295,7 @@ class ChessModelAPI(object):
 
     def make_tree(self, state_str):
         game, _ = calc_game_node(state_str)
-        return make_tree(game) 
+        return make_tree_dict(game) 
 
 ####################################
 # GUI BOARD
@@ -704,14 +719,14 @@ class ChessTree(tk.Frame):
         self.tree_clicked = False
         # self.tree.configure(takefocus=1)
 
-    def make_tree(self, game, root_tree_node_str, variations, tree_dict):
+    def make_tree(self, game, root_node_str, variations, tree_dict):
         print(tree_dict)
         # empty tree
         children = self.tree.get_children('')
         for child in children:
             self.tree.delete(child)
         # insert initial tree node, and pass it in as 2nd parameter
-        initial_node = self.tree.insert('', "end", text=root_tree_node_str, open=True, tags='all')
+        initial_node = self.tree.insert('', "end", text=root_node_str, open=True, tags='all')
         self.tree_pgn_node_recur(game, initial_node, True)
 
         self.tree.selection_set(self.get_root_node())
@@ -1059,7 +1074,7 @@ class App(object):
         self.bv.set_player(vp)
         self.bv.update_display(self.state_str["piece_distrib"])
         self.state_str = self.cm.set_headers(self.state_str, vp)
-        self.ct.update_tree_node(self.state_str["root_tree_node_str"], self.ct.get_root_node())
+        self.ct.update_tree_node(self.state_str["root_node_str"], self.ct.get_root_node())
 
     # close the comment window when closing main window
     def on_closing(self):
@@ -1268,7 +1283,7 @@ class App(object):
 
     def make_tree_builtin(self, tree_dict):
         # new tree for built-in
-        self.ct.make_tree(self.state_str["game_py"], self.state_str["root_tree_node_str"], self.state_str["variations"], tree_dict)
+        self.ct.make_tree(self.state_str["game_py"], self.state_str["root_node_str"], self.state_str["variations"], tree_dict)
         self.ct.horz_scrollbar_magic()
 
     # when the next move menu changes, next_move_str changes bringing control to here.
