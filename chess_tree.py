@@ -704,7 +704,7 @@ class ChessTree(tk.Frame):
         self.tree_clicked = False
         # self.tree.configure(takefocus=1)
 
-    def make_tree(self, game, root_tree_node_str, tree_dict):
+    def make_tree(self, game, root_tree_node_str, variations, tree_dict):
         print(tree_dict)
         # empty tree
         children = self.tree.get_children('')
@@ -713,6 +713,11 @@ class ChessTree(tk.Frame):
         # insert initial tree node, and pass it in as 2nd parameter
         initial_node = self.tree.insert('', "end", text=root_tree_node_str, open=True, tags='all')
         self.tree_pgn_node_recur(game, initial_node, True)
+
+        self.tree.selection_set(self.get_root_node())
+        # self.tree.see(tree_node)
+        if len(variations) > 0:
+            self.update_tree_selection_2ndary(variations[0])
 
     def tree_pgn_node_recur(self, pgn_node, parent, initial=False):
         # if pgn_node.parent is not None:
@@ -1263,7 +1268,7 @@ class App(object):
 
     def make_tree_builtin(self, tree_dict):
         # new tree for built-in
-        self.ct.make_tree(self.state_str["game_py"], self.state_str["root_tree_node_str"], tree_dict)
+        self.ct.make_tree(self.state_str["game_py"], self.state_str["root_tree_node_str"], self.state_str["variations"], tree_dict)
         self.ct.horz_scrollbar_magic()
 
     # when the next move menu changes, next_move_str changes bringing control to here.
