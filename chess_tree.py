@@ -156,7 +156,7 @@ def make_tree_dict_recur(node_py):
         return tree
 
 def set_headers(game, is_white):
-    if is_white == 'W':
+    if is_white:
         game.headers["White"] = 'Me'
         game.headers["Black"] = 'Opponent'
     else:
@@ -172,8 +172,7 @@ def init_pgn_state(game, is_white):
 def game_moves2node(game, moves):
     node = game
     for move in moves:
-        ind = get_var_ind_from_san(node, move)
-        node = node.variation(ind)
+        node = get_var_from_san(node, move)
     return node
 
 def calc_game_node(state_str):
@@ -187,11 +186,8 @@ def calc_san(pgn_node, start, destination):
     uci = file_rank2square_name(start.file, start.rank) + file_rank2square_name(destination.file, destination.rank)
     return pgn_node.board().san(chess.Move.from_uci(uci))
 
-# Assumes Var exists, should never get here if it doesn't. Intended for getting variation from san in dropdown menu
-def get_var_ind_from_san(pgn_node, san):
-    for p in range(0, len(pgn_node.variations)):
-        if san == pgn_node.board().san(pgn_node.variations[p].move):
-            return p
+def get_var_from_san(pgn_node, san):
+    return pgn_node.variation(pgn_node.board().parse_san(san))
 
 def pgn_node2moves(pgn_node):
     moves = []
@@ -254,8 +250,7 @@ class ChessModelAPI(object):
 
     def move_frwd(self, state_str, san):
         game, node = calc_game_node(state_str)
-        ind = get_var_ind_from_san(node, san)
-        node = node.variations[ind]
+        node = get_var_from_san(node, san)
         return make_state_str(game, node)
 
     def move_frwd_full(self, state_str):
@@ -272,15 +267,15 @@ class ChessModelAPI(object):
     def diddle_var(self, state_str, diddle, san):
         game, node = calc_game_node(state_str)
         print(diddle + 'Var')
-        ind = get_var_ind_from_san(node, san)
+        diddle_node = get_var_from_san(node, san)
         if diddle == 'remove':
-            node.remove_variation(node.variations[ind].move)
+            node.remove_variation(diddle_node)
         elif diddle == 'promote2main':
-            node.promote_to_main(node.variations[ind].move)
+            node.promote_to_main(diddle_node)
         elif diddle == 'promote':
-            node.promote(node.variations[ind].move)
+            node.promote(diddle_node)
         elif diddle == 'demote':
-            node.demote(node.variations[ind].move)
+            node.demote(diddle_node)
         return make_state_str(game, node)
 
     ####################################
