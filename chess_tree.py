@@ -154,8 +154,8 @@ def make_tree_dict_recur(node_py):
             tree["children"].append(make_tree_dict_recur(variation))
         return tree
 
-def set_headers(game, vp):
-    if vp == 'W':
+def set_headers(game, is_white):
+    if is_white == 'W':
         game.headers["White"] = 'Me'
         game.headers["Black"] = 'Opponent'
     else:
@@ -163,8 +163,8 @@ def set_headers(game, vp):
         game.headers["Black"] = 'Me'
     return game
 
-def init_pgn_state(game, vp):
-    game = set_headers(game, vp)
+def init_pgn_state(game, is_white):
+    game = set_headers(game, is_white)
     node = game
     return make_state_str(game, node) 
 
@@ -228,9 +228,9 @@ class ChessModelAPI(object):
     def __init__(self):
         pass
 
-    def init_state(self, vp):
+    def init_state(self, is_white):
         game = chess.pgn.Game()
-        return init_pgn_state(game, vp)
+        return init_pgn_state(game, is_white)
 
     ###########################
     # moves
@@ -300,9 +300,9 @@ class ChessModelAPI(object):
             # node.add_variation(chess.Move.from_uci(uci))
         return make_state_str(game, node), added, san, make_san_node_str(new_node)
 
-    def set_headers(self, state_str, vp):
+    def set_headers(self, state_str, is_white):
         game, node = calc_game_node(state_str)
-        game = set_headers(game, vp)
+        game = set_headers(game, is_white)
         return make_state_str(game, node)
 
     def make_tree(self, state_str):
@@ -364,7 +364,7 @@ TILES = {"black_tile": "black_tile.gif",
 
 
 class BoardView(tk.Frame):
-    def __init__(self, parent=None, vp='W'):
+    def __init__(self, parent=None, is_white=True):
         tk.Frame.__init__(self, parent)
         self.canvas = tk.Canvas(self, width=BOARD_WIDTH, height=BOARD_HEIGHT)
         self.canvas.pack()
@@ -382,10 +382,10 @@ class BoardView(tk.Frame):
             # eg self.images['N'] is a PhotoImage of a white knight
             # this means we can directly translate a board entry from the model into a picture
         self.pack()
-        self.vp = vp
+        self.is_white = is_white
 
-    def set_player(self, vp):
-        self.vp = vp
+    def set_player(self, is_white):
+        self.is_white = is_white
 
     def get_click_location(self, event):
         # Handle a click received.  The x,y location of the click on the canvas is at
@@ -465,7 +465,7 @@ class BoardView(tk.Frame):
     # reversing rank so rank 0 is the bottom (chess) rather than top (tk) for White
     # reversing file so file 0 is the right (chess) rather than top (tk) for Black
     def flip_file_rank(self, file_, rank):
-        if self.vp == 'W':
+        if self.is_white:
             rank = 7 - rank
         else:
             file_ = 7 - file_
@@ -982,7 +982,7 @@ class App(object):
         # be prepared to close the tree window when closing main window
         self.parent.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        vp = 'W'
+        is_white = True
 
         # we have create both a model and a view within the controller
         # the controller doesn't inherit from either model or view
@@ -990,7 +990,7 @@ class App(object):
         # Create the chess model (cm)
         self.cm = ChessModelAPI()
 
-        self.state_str = self.cm.init_state(vp)
+        self.state_str = self.cm.init_state(is_white)
 
         self.top = tk.Frame(self.parent)
         # self.top.pack(side=TOP, fill=BOTH, expand=True)
@@ -1002,7 +1002,7 @@ class App(object):
         self.left.pack(side=tk.LEFT)
 
         # Create the board view (bv)
-        self.bv = BoardView(self.left, vp=vp)
+        self.bv = BoardView(self.left, is_white=is_white)
 
         # Create the controls (c)
         # self.c = Controls(self.parent)
@@ -1046,15 +1046,12 @@ class App(object):
         self.right_top2 = tk.Frame(self.right)
         self.right_top2.pack(side=tk.TOP)
 
-        self.vp = tk.IntVar()
-        if vp == 'W':
-            self.vp.set(1)
-        else:
-            self.vp.set(0)
+        self.is_white = tk.IntVar()
+        self.is_white.set(is_white)
 
-        self.rb_w = tk.Radiobutton(self.right_top2, text="White", variable=self.vp, value=1, command=self.set_player)
+        self.rb_w = tk.Radiobutton(self.right_top2, text="White", variable=self.is_white, value=1, command=self.set_player)
         self.rb_w.pack(side=tk.LEFT)
-        self.rb_b = tk.Radiobutton(self.right_top2, text="Black", variable=self.vp, value=0, command=self.set_player)
+        self.rb_b = tk.Radiobutton(self.right_top2, text="Black", variable=self.is_white, value=0, command=self.set_player)
         self.rb_b.pack(side=tk.LEFT)
 
         # self.cl = tk.Label(self.right, text='Game listing will go here.', bg='#eee')
@@ -1090,11 +1087,12 @@ class App(object):
         tk.mainloop()
 
     def set_player(self):
-        # self.vp is a control variable attached to the White/Black radio buttons
-        vp = color_bool2char(self.vp.get())
-        self.bv.set_player(vp)
+        # self.is_white is a control variable attached to the White/Black radio buttons
+        # vp = color_bool2char(self.vp.get())
+        is_white = self.is_white
+        self.bv.set_player(is_white)
         self.bv.update_display(self.state_str["piece_distrib"])
-        self.state_str = self.cm.set_headers(self.state_str, vp)
+        self.state_str = self.cm.set_headers(self.state_str, is_white)
         self.ct.update_tree_node(self.state_str["root_node_str"], self.ct.get_root_node())
 
     # close the comment window when closing main window
