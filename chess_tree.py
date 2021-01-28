@@ -184,7 +184,7 @@ def calc_game_node(state_str):
     # return state_str["game_py"], state_str["node_py"]
 
 def calc_san(pgn_node, start, destination):
-    uci = file_rank2str(start.file, start.rank) + file_rank2str(destination.file, destination.rank)
+    uci = file_rank2square_name(start.file, start.rank) + file_rank2square_name(destination.file, destination.rank)
     return pgn_node.board().san(chess.Move.from_uci(uci))
 
 # Assumes Var exists, should never get here if it doesn't. Intended for getting variation from san in dropdown menu
@@ -290,7 +290,7 @@ class ChessModelAPI(object):
     def move_add(self, state_str, start, destination):
         game, node = calc_game_node(state_str)
         print('move:', start.file, start.rank, destination.file, destination.rank)
-        uci = file_rank2str(start.file, start.rank) + file_rank2str(destination.file, destination.rank)
+        uci = file_rank2square_name(start.file, start.rank) + file_rank2square_name(destination.file, destination.rank)
         san = calc_san(node, start, destination)
         if node.has_variation(chess.Move.from_uci(uci)):
             added = False
@@ -477,8 +477,15 @@ class BoardView(tk.Frame):
 
 # Used by App and Chess Model
 # file and rank inds to square name (e.g. "a1")
-def file_rank2str(file_, rank):
+def file_rank2square_name(file_, rank):
     return chr(ord('a')+file_) + chr(ord('1')+rank)
+
+# Used by App only, but keep with above
+# square name (e.g. "a1") to file and rank inds
+def square_name2file_rank(square_name):
+    file_ = ord(square_name[0]) - ord('a')
+    rank = ord(square_name[1]) - ord('1')
+    return BoardCoords(file_, rank)
 
 # Used by App only
 def get_piece_color(piece):
@@ -1164,11 +1171,11 @@ class App(object):
     def get_legal_dests_from(self, board_coords):
         if get_piece_color(self.state_str["piece_distrib"][board_coords.rank][board_coords.file]) != self.state_str["turn"]:
             return False, []
-        start_coord = file_rank2str(board_coords.file, board_coords.rank)
+        start_coord = file_rank2square_name(board_coords.file, board_coords.rank)
         legal_moves = list(filter(lambda m : m[0:2] == start_coord, self.state_str["legal_moves"]))
         # maps e.g. ["e2e3", "e2e4"] to ["e3", "e4"] to [{f : 4, r : 2}, {f : 4, r : 3}]
         dest_list = list(map(
-            lambda m : BoardCoords(ord(m[2]) - ord('a'), ord(m[3]) - ord('1')),
+            lambda m : square_name2file_rank(m[2:]),
             legal_moves))
         return True, dest_list
 
