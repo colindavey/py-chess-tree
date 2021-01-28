@@ -404,8 +404,7 @@ class BoardView(tk.Frame):
         if rank == 8:
             rank = 7
         # reversing rank/file as necessary for W/B
-        rank = self.flip_y_rank(rank)
-        file_ = self.flip_x_file(file_)
+        file_, rank = self.flip_file_rank(file_, rank)
         return BoardCoords(file_, rank)
 
     def update_display(self, piece_distrib):
@@ -428,9 +427,8 @@ class BoardView(tk.Frame):
 
     def draw_tile(self, file_, rank, tile):
         # reversing rank/file as necessary for W/B
-        x = self.flip_x_file(file_) * TILE_WIDTH
-        y = self.flip_y_rank(rank) * TILE_WIDTH
-        self.canvas.create_image(x, y, anchor=tk.NW, image=tile)
+        x, y = self.flip_file_rank(file_, rank)
+        self.canvas.create_image(x * TILE_WIDTH, y * TILE_WIDTH, anchor=tk.NW, image=tile)
 
     def draw_empty_board(self):
         for r in range(0, 8):
@@ -465,18 +463,13 @@ class BoardView(tk.Frame):
             self.draw_tile(item.file, item.rank, tile)
 
     # reversing rank so rank 0 is the bottom (chess) rather than top (tk) for White
-    def flip_y_rank(self, in_val):
-        out_val = in_val
-        if self.vp == 'W':
-            out_val = 7 - out_val
-        return out_val
-
     # reversing file so file 0 is the right (chess) rather than top (tk) for Black
-    def flip_x_file(self, in_val):
-        out_val = in_val
-        if self.vp == 'B':
-            out_val = 7 - out_val
-        return out_val
+    def flip_file_rank(self, file_, rank):
+        if self.vp == 'W':
+            rank = 7 - rank
+        else:
+            file_ = 7 - file_
+        return file_, rank
 
 #####################################
 # Utility Functions
