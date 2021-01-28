@@ -880,22 +880,15 @@ class ChessTree(tk.Frame):
             # self.tree.column('#0', minwidth=520)
 
     def get_node_with_move(self, tree_node, move):
-        childrenIDs = self.tree.get_children(tree_node)
-        for q in range(0, len(childrenIDs)):
-            tmptext = self.tree.item(childrenIDs[q], 'text')
+        for child in self.tree.get_children(tree_node):
+            tmptext = self.tree.item(child, 'text')
             tmptext_bits = tmptext.split(' ')
             tmptext = tmptext_bits[1]
             if tmptext == move:
+                # !!!why doesn't the return work here? 
+                # return child
                 break
-        return childrenIDs[q]
-
-    # def get_node_with_move(self, tree_node, move):
-    #     for child in self.tree.get_children(tree_node):
-    #         tmptext = self.tree.item(child, 'text')
-    #         tmptext_bits = tmptext.split(' ')
-    #         tmptext = tmptext_bits[1]
-    #         if tmptext == move:
-    #             return child
+        return child
 
     def update_tree(self, moves, next_move):
         # select the node of the current move by traversing through the moves.
