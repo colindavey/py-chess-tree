@@ -879,24 +879,34 @@ class ChessTree(tk.Frame):
             # self.tree.column('#0', minwidth=1000)
             # self.tree.column('#0', minwidth=520)
 
+    def get_node_with_move(self, tree_node, move):
+        childrenIDs = self.tree.get_children(tree_node)
+        for q in range(0, len(childrenIDs)):
+            tmptext = self.tree.item(childrenIDs[q], 'text')
+            tmptext_bits = tmptext.split(' ')
+            tmptext = tmptext_bits[1]
+            if tmptext == move:
+                break
+        return childrenIDs[q]
+
+    # def get_node_with_move(self, tree_node, move):
+    #     for child in self.tree.get_children(tree_node):
+    #         tmptext = self.tree.item(child, 'text')
+    #         tmptext_bits = tmptext.split(' ')
+    #         tmptext = tmptext_bits[1]
+    #         if tmptext == move:
+    #             return child
+
     def update_tree(self, moves, next_move):
         # select the node of the current move by traversing through the moves.
         # the premise is that all the moves are in the tree
         tree_node = self.get_root_node()
         for p in range(0, len(moves)):
             tmp_next_move = moves[p]
-            # !!!this bit is candidate for turning into a routine
             childrenIDs = self.tree.get_children(tree_node)
             # should always pass this if, since the premise is that all moves are in the tree
             if len(childrenIDs) > 0:
-                for q in range(0, len(childrenIDs)):
-                    tmptext = self.tree.item(childrenIDs[q], 'text')
-                    tmptext_bits = tmptext.split(' ')
-                    tmptext = tmptext_bits[1]
-
-                    if tmptext == tmp_next_move:
-                        break
-                tree_node = childrenIDs[q]
+                tree_node = self.get_node_with_move(tree_node, tmp_next_move)
         self.tree.selection_set(tree_node)
         # self.tree.see(tree_node)
         self.update_tree_selection_2ndary(next_move)
@@ -912,17 +922,10 @@ class ChessTree(tk.Frame):
         selected_node = self.get_selected_node()
 
         # tag the new selection variation
-        # !!!this bit is candidate for turning into a routine
         childrenIDs = self.tree.get_children(selected_node)
         if len(childrenIDs) > 0:
-            for q in range(0, len(childrenIDs)):
-                tmptext = self.tree.item(childrenIDs[q], 'text')
-                tmptext_bits = tmptext.split(' ')
-                tmptext = tmptext_bits[1]
-
-                if tmptext == next_move:
-                    break
-            self.tree.item(childrenIDs[q], tags=['sel_var', 'all'])
+            tree_node = self.get_node_with_move(selected_node, next_move)
+            self.tree.item(tree_node, tags=['sel_var', 'all'])
             # self.tree.see(childrenIDs[q])
 
     def diddle_var_tree(self, diddle):
