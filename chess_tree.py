@@ -83,6 +83,18 @@ def print_pgn_node_recur(pgn_node, initial=False, ply_num=0):
 #     pass
 
 # Critical code
+
+def make_brief_comment_str(comment_str):
+    if comment_str != "":
+        # strip out new lines
+        comment_str = comment_str.replace('\n' ,' ')
+        # if comment is too long, shorten it and append "..."
+        max_comment_str_len = 50
+        if len(comment_str) > max_comment_str_len:
+            comment_str = comment_str[0:max_comment_str_len] + '...'
+        comment_str = ' {' + comment_str + '}'
+    return comment_str
+
 def make_state_str(pgn_game, pgn_node):
     board = pgn_node.board()
     state_str = {}
@@ -114,11 +126,11 @@ def make_state_str(pgn_game, pgn_node):
     state_str["player_black"] = pgn_game.headers['Black']
     state_str["root_node_str"] = make_root_node_str(pgn_game)
     if pgn_node.parent is None:
-        state_str["tree_node_str"] = state_str["root_node_str"]
+        state_str["node_str"] = state_str["root_node_str"]
     else:
-        state_str["tree_node_str"] = make_san_node_str(pgn_node)
-    state_str["game_py"] = pgn_game
-    state_str["node_py"] = pgn_node
+        state_str["node_str"] = make_san_node_str(pgn_node)
+    # state_str["game_py"] = pgn_game
+    # state_str["node_py"] = pgn_node
     return state_str
 
 def make_root_node_str(game_py):
@@ -469,23 +481,19 @@ class BoardView(tk.Frame):
 #####################################
 # Utility Functions
 
-def make_brief_comment_str(comment_str):
-    if comment_str != "":
-        # strip out new lines
-        comment_str = comment_str.replace('\n' ,' ')
-        # if comment is too long, shorten it and append "..."
-        max_comment_str_len = 50
-        if len(comment_str) > max_comment_str_len:
-            comment_str = comment_str[0:max_comment_str_len] + '...'
-        comment_str = ' {' + comment_str + '}'
-    return comment_str
+# Used by App and Chess Model
+# file and rank inds to square name (e.g. "a1")
+def file_rank2str(file_, rank):
+    return chr(ord('a')+file_) + chr(ord('1')+rank)
 
+# Used by App and Chess Model one time each
 def color_bool2char(bool_in):
     if bool_in:
         return 'W'
     else:
         return 'B'
 
+# Used by App only
 def get_piece_color(piece):
     if piece == EMPTY_SQUARE:
         return ' '
@@ -494,21 +502,19 @@ def get_piece_color(piece):
     else:
         return 'W'
 
-# file and rank inds to square name (e.g. "a1")
-def file_rank2str(file_, rank):
-    return chr(ord('a')+file_) + chr(ord('1')+rank)
-
-class BoardCoords(object):
-    def __init__(self, file_, rank):
-        self.file = file_
-        self.rank = rank
-
+# Only by App only
 def geo_str2list(geo_str):
     geo_str = geo_str.replace('+', ' ')
     geo_str = geo_str.replace('x', ' ')
     geo = geo_str.split(' ')
     geo = [int(i) for i in geo]
     return geo
+
+# Used by App and BoardView
+class BoardCoords(object):
+    def __init__(self, file_, rank):
+        self.file = file_
+        self.rank = rank
 
 class ChessListing(tk.Frame):
     def __init__(self, parent=None, do_grid=False):
@@ -719,29 +725,48 @@ class ChessTree(tk.Frame):
         self.tree_clicked = False
         # self.tree.configure(takefocus=1)
 
-    def make_tree(self, game, root_node_str, variations, tree_dict):
+    def make_tree(self, variations, tree_dict):
         print(tree_dict)
         # empty tree
         children = self.tree.get_children('')
         for child in children:
             self.tree.delete(child)
-        # insert initial tree node, and pass it in as 2nd parameter
-        initial_node = self.tree.insert('', "end", text=root_node_str, open=True, tags='all')
-        self.tree_pgn_node_recur(game, initial_node, True)
+
+        self.tree_pgn_node_recur(tree_dict, '')
 
         self.tree.selection_set(self.get_root_node())
         # self.tree.see(tree_node)
         if len(variations) > 0:
             self.update_tree_selection_2ndary(variations[0])
 
-    def tree_pgn_node_recur(self, pgn_node, parent, initial=False):
-        # if pgn_node.parent is not None:
-        if not initial:
-            the_str = make_san_node_str(pgn_node)
-            parent = self.tree.insert(parent, "end", text=the_str, open=True, tags='all')
-        if not pgn_node.is_end():
-            for variation in pgn_node.variations:
-                self.tree_pgn_node_recur(variation, parent)
+    def tree_pgn_node_recur(self, dict_node, parent):
+        parent = self.tree.insert(parent, "end", text=dict_node["label"], open=True, tags='all')
+        for child in dict_node["children"]:
+            self.tree_pgn_node_recur(child, parent)
+
+    # def make_tree(self, game, root_node_str, variations, tree_dict):
+    #     print(tree_dict)
+    #     # empty tree
+    #     children = self.tree.get_children('')
+    #     for child in children:
+    #         self.tree.delete(child)
+    #     # insert initial tree node, and pass it in as 2nd parameter
+    #     initial_node = self.tree.insert('', "end", text=root_node_str, open=True, tags='all')
+    #     self.tree_pgn_node_recur(game, initial_node, True)
+
+    #     self.tree.selection_set(self.get_root_node())
+    #     # self.tree.see(tree_node)
+    #     if len(variations) > 0:
+    #         self.update_tree_selection_2ndary(variations[0])
+
+    # def tree_pgn_node_recur(self, pgn_node, parent, initial=False):
+    #     # if pgn_node.parent is not None:
+    #     if not initial:
+    #         the_str = make_san_node_str(pgn_node)
+    #         parent = self.tree.insert(parent, "end", text=the_str, open=True, tags='all')
+    #     if not pgn_node.is_end():
+    #         for variation in pgn_node.variations:
+    #             self.tree_pgn_node_recur(variation, parent)
 
     # tree changes due to clicks or key presses allow actions on tree selection changes
     # otherwise not
@@ -1049,9 +1074,12 @@ class App(object):
         self.bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
         self.ct = ChessTree(self.bottom)
         self.ct.tree.bind("<<TreeviewSelect>>", self.handle_tree_select_builtin)
+
         # new tree for built-in
-        self.make_tree_builtin({})
+        tree_dict = self.cm.make_tree(self.state_str)
+        self.make_tree_builtin(tree_dict)
         # initialize separate windows, which don't exist yet
+
         self.ce_root = None
 
         # initialize some variables
@@ -1195,7 +1223,7 @@ class App(object):
         self.state_str = self.cm.set_comment(self.state_str, comment)
         self.ce.save_button.configure(state=tk.DISABLED)
         self.ce.editor.edit_modified(False)
-        self.ct.update_tree_node(self.state_str["tree_node_str"], self.ce.tree_node)
+        self.ct.update_tree_node(self.state_str["node_str"], self.ce.tree_node)
 
     def diddle_var(self, diddle):
         san = self.c.next_move_str.get()
@@ -1283,7 +1311,7 @@ class App(object):
 
     def make_tree_builtin(self, tree_dict):
         # new tree for built-in
-        self.ct.make_tree(self.state_str["game_py"], self.state_str["root_node_str"], self.state_str["variations"], tree_dict)
+        self.ct.make_tree(self.state_str["variations"], tree_dict)
         self.ct.horz_scrollbar_magic()
 
     # when the next move menu changes, next_move_str changes bringing control to here.
@@ -1320,6 +1348,7 @@ class App(object):
             self.state_str["moves"] = []
             self.state_str = self.cm.move_back_full(self.state_str)
             self.set_player()
+
             tree_dict = self.cm.make_tree(self.state_str)
 
             self.update_display()
