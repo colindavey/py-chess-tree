@@ -111,7 +111,8 @@ def make_state_str(pgn_game, pgn_node):
         piece_distrib.append(rank_array)
     state_str["piece_distrib"] = piece_distrib
     state_str["fen"] = board.fen()
-    state_str["turn"] = color_bool2char(board.turn)
+
+    state_str["turn"] = 'W' if board.turn else 'B'
     state_str["legal_moves"] = [str(m) for m in board.legal_moves]
 
     variations = []
@@ -478,13 +479,6 @@ class BoardView(tk.Frame):
 # file and rank inds to square name (e.g. "a1")
 def file_rank2str(file_, rank):
     return chr(ord('a')+file_) + chr(ord('1')+rank)
-
-# Used by App and Chess Model one time each
-def color_bool2char(bool_in):
-    if bool_in:
-        return 'W'
-    else:
-        return 'B'
 
 # Used by App only
 def get_piece_color(piece):
@@ -1088,8 +1082,7 @@ class App(object):
 
     def set_player(self):
         # self.is_white is a control variable attached to the White/Black radio buttons
-        # vp = color_bool2char(self.vp.get())
-        is_white = self.is_white
+        is_white = self.is_white.get()
         self.bv.set_player(is_white)
         self.bv.update_display(self.state_str["piece_distrib"])
         self.state_str = self.cm.set_headers(self.state_str, is_white)
