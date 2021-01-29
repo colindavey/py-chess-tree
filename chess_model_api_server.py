@@ -5,90 +5,42 @@ import io
 
 from file_rank_square import file_rank2square_name
 
+def chess_model_api_init():
+    game = chess.pgn.Game()
+    node = game
+    return make_state(game, node) 
+
+def chess_model_api_make_tree(state_in):
+    game, _ = calc_game_node(state_in)
+    return make_tree_dict_recur(game) 
+
 def chess_model_api(operation, state_in, inputs={}):
     game, node = calc_game_node(state_in)
     outputs = {}
-    # cm = ChessModelAPI()
-    # switcher = {
 
-    # }
-    if operation == "move_to":
-        node = game_moves2node(game, inputs["moves"])
-    elif operation == "set_headers":
-        game = set_headers(game, inputs["is_white"])
-    elif operation == "set_comment":
-        node.comment = inputs["comment"]
+    if operation == 'set_headers':
+        if inputs['is_white']:
+            game.headers["White"] = 'Me'
+            game.headers["Black"] = 'Opponent'
+        else:
+            game.headers["White"] = 'Opponent'
+            game.headers["Black"] = 'Me'
 
-    return make_state_str(game, node), outputs
+    elif operation == 'set_comment':
+        node.comment = inputs['comment']
 
-class ChessModelAPI(object):
-    def __init__(self):
-        pass
+    elif operation == 'move_to':
+        node = game_moves2node(game, inputs['moves'])
 
-    def init_state(self, is_white):
-        game = chess.pgn.Game()
-        return init_pgn_state(game, is_white)
-
-    def make_tree(self, state_str):
-        game, _ = calc_game_node(state_str)
-        return make_tree_dict(game) 
-
-    ###########################
-    # moves
-    ###########################
-
-    def move_to(self, state_str, moves):
-        game, node = calc_game_node(state_str)
-        node = game_moves2node(game, moves)
-        return make_state_str(game, node)
-
-    def move_back_full(self, state_str):
-        game, node = calc_game_node(state_str)
+    elif operation == 'move_back_full':
         node = game
-        return make_state_str(game, node)
 
-    def move_back(self, state_str):
-        game, node = calc_game_node(state_str)
+    elif operation == 'move_back':
         node = node.parent
-        return make_state_str(game, node)
 
-    def move_frwd(self, state_str, san):
-        game, node = calc_game_node(state_str)
-        node = get_var_from_san(node, san)
-        return make_state_str(game, node)
-
-    def move_frwd_full(self, state_str):
-        game, node = calc_game_node(state_str)
-        while not node.is_end():
-            node = node.variations[0]
-        return make_state_str(game, node)
-
-    def set_comment(self, state_str, comment):
-        game, node = calc_game_node(state_str)
-        node.comment = comment
-        return make_state_str(game, node)
-
-    def diddle_var(self, state_str, diddle, san):
-        game, node = calc_game_node(state_str)
-        print(diddle + 'Var')
-        diddle_node = get_var_from_san(node, san)
-        if diddle == 'remove':
-            node.remove_variation(diddle_node)
-        elif diddle == 'promote2main':
-            node.promote_to_main(diddle_node)
-        elif diddle == 'promote':
-            node.promote(diddle_node)
-        elif diddle == 'demote':
-            node.demote(diddle_node)
-        return make_state_str(game, node)
-
-    ####################################
-    # Doesn't change board state, but changes other state
-    ####################################
-
-    def move_add(self, state_str, start, destination):
-        game, node = calc_game_node(state_str)
-        print('move:', start.file, start.rank, destination.file, destination.rank)
+    elif operation == 'move_add':
+        start = inputs['start']
+        destination = inputs['destination']
         uci = file_rank2square_name(start.file, start.rank) + file_rank2square_name(destination.file, destination.rank)
         san = calc_san(node, start, destination)
         if node.has_variation(chess.Move.from_uci(uci)):
@@ -97,13 +49,30 @@ class ChessModelAPI(object):
         else:
             added = True
             new_node = node.add_variation(chess.Move.from_uci(uci))
-            # node.add_variation(chess.Move.from_uci(uci))
-        return make_state_str(game, node), added, san, make_san_node_str(new_node)
+        outputs["added"] = added
+        outputs["san"] = san
+        outputs["move_str"] = make_san_node_str(new_node)
 
-    def set_headers(self, state_str, is_white):
-        game, node = calc_game_node(state_str)
-        game = set_headers(game, is_white)
-        return make_state_str(game, node)
+    elif operation == 'move_frwd':
+        node = get_var_from_san(node, inputs['san'])
+
+    elif operation == 'move_frwd_full':
+        while not node.is_end():
+            node = node.variations[0]
+
+    elif operation == 'diddle_var':
+        diddle_node = get_var_from_san(node, inputs['san'])
+        diddle = inputs['diddle']
+        if diddle == 'remove':
+            node.remove_variation(diddle_node)
+        elif diddle == 'promote2main':
+            node.promote_to_main(diddle_node)
+        elif diddle == 'promote':
+            node.promote(diddle_node)
+        elif diddle == 'demote':
+            node.demote(diddle_node)
+
+    return make_state(game, node), outputs
 
 # Critical code
 
@@ -118,7 +87,7 @@ def make_brief_comment_str(comment_str):
         comment_str = ' {' + comment_str + '}'
     return comment_str
 
-def make_state_str(pgn_game, pgn_node):
+def make_state(pgn_game, pgn_node):
     board = pgn_node.board()
     state_str = {}
     piece_distrib = []
@@ -161,9 +130,6 @@ def make_root_node_str(game_py):
     return 'White: ' + game_py.headers['White'] + '. Black: ' + game_py.headers['Black'] + '.' + \
         make_brief_comment_str(game_py.comment)
 
-def make_tree_dict(game):
-    return make_tree_dict_recur(game)
-
 def make_tree_dict_recur(node_py):
     tree = {}
     if not node_py.parent is not None:
@@ -177,20 +143,6 @@ def make_tree_dict_recur(node_py):
         for variation in node_py.variations:
             tree["children"].append(make_tree_dict_recur(variation))
         return tree
-
-def set_headers(game, is_white):
-    if is_white:
-        game.headers["White"] = 'Me'
-        game.headers["Black"] = 'Opponent'
-    else:
-        game.headers["White"] = 'Opponent'
-        game.headers["Black"] = 'Me'
-    return game
-
-def init_pgn_state(game, is_white):
-    game = set_headers(game, is_white)
-    node = game
-    return make_state_str(game, node) 
 
 def game_moves2node(game, moves):
     node = game

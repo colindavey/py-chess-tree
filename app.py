@@ -9,8 +9,9 @@ from controls import Controls
 from chess_listing import ChessListing
 from chess_tree import ChessTree
 
-from chess_model_api import ChessModelAPI
 from chess_model_api_server import chess_model_api
+from chess_model_api_server import chess_model_api_init
+from chess_model_api_server import chess_model_api_make_tree
 
 from file_rank_square import file_rank2square_name
 from file_rank_square import square_name2file_rank
@@ -33,24 +34,27 @@ def geo_str2list(geo_str):
     geo = [int(i) for i in geo]
     return geo
 
+def chess_model_api_client(operation, state_in, **kwargs):
+    state_arg = {}
+    state_arg["pgn_str"] = state_in["pgn_str"]
+    state_arg["moves"] = state_in["moves"]
+    state_ret, outputs = chess_model_api(operation, state_arg, kwargs)
+    return state_ret, outputs
+
 class App(object):
     def __init__(self, parent=None):
+        # Create the chess model (cm)
+        is_white = True
+        self.state_str = chess_model_api_init()
+        self.state_str, _ = chess_model_api_client('set_headers', self.state_str, is_white=is_white)
+        tree_dict = chess_model_api_make_tree(self.state_str)
+
         self.title_str = 'python chess tree, Colin Davey v alpha'
         self.parent = parent
         self.parent.title(self.title_str)
 
         # be prepared to close the tree window when closing main window
         self.parent.protocol("WM_DELETE_WINDOW", self.on_closing)
-
-        is_white = True
-
-        # we have create both a model and a view within the controller
-        # the controller doesn't inherit from either model or view
-
-        # Create the chess model (cm)
-        self.cm = ChessModelAPI()
-
-        self.state_str = self.cm.init_state(is_white)
 
         self.top = tk.Frame(self.parent)
         # self.top.pack(side=TOP, fill=BOTH, expand=True)
@@ -125,8 +129,6 @@ class App(object):
         self.ct = ChessTree(self.bottom)
         self.ct.tree.bind("<<TreeviewSelect>>", self.handle_tree_select_builtin)
 
-        # new tree for built-in
-        tree_dict = self.cm.make_tree(self.state_str)
         self.make_tree_builtin(tree_dict)
         # initialize separate windows, which don't exist yet
 
@@ -136,28 +138,12 @@ class App(object):
         self.click1 = []
         self.legal_dests = []
 
-    def chess_model_api_client(self, operation, state_in, **kwargs):
-        # inputs = {}
-        # if operation == 'move_to':
-        #     inputs['moves'] = kwargs['moves']
-        # if operation == 'set_headers':
-        #     inputs['is_white'] = kwargs['is_white']
-        # if operation == 'set_comment':
-        #     inputs['comment'] = kwargs['comment']
-        # state_ret, outputs = chess_model_api(operation, state_arg, inputs)
-        state_arg = {}
-        state_arg["pgn_str"] = state_in["pgn_str"]
-        state_arg["moves"] = state_in["moves"]
-        state_ret, outputs = chess_model_api(operation, state_arg, kwargs)
-        return state_ret, outputs
-
     def set_player(self):
         # self.is_white is a control variable attached to the White/Black radio buttons
         is_white = self.is_white.get()
         self.bv.set_player(is_white)
         self.bv.update_display(self.state_str["piece_distrib"])
-        # self.state_str = self.cm.set_headers(self.state_str, is_white)
-        self.state_str, _ = self.chess_model_api_client('set_headers', self.state_str, is_white=is_white)
+        self.state_str, _ = chess_model_api_client('set_headers', self.state_str, is_white=is_white)
 
         self.ct.update_tree_node(self.state_str["root_node_str"], self.ct.get_root_node())
 
@@ -165,11 +151,7 @@ class App(object):
         moves = self.cl.handle_click(event)
         print(moves)
         if len(moves) > 0:
-            # self.state_str = self.cm.move_to(self.state_str, moves)
-            # args = {}
-            # args["moves"] = moves
-            # self.state_str, _ = chess_model_api('move_to', self.state_str, args)
-            self.state_str, _ = self.chess_model_api_client('move_to', self.state_str, moves=moves)
+            self.state_str, _ = chess_model_api_client('move_to', self.state_str, moves=moves)
             self.update_display()
             self.close_all_but_current()
 
@@ -180,16 +162,14 @@ class App(object):
         comment = self.ce.editor.get(1.0, tk.END)
         comment = comment[0:-1]
         print('comment:', comment)
-        # self.state_str = self.cm.set_comment(self.state_str, comment)
-        self.state_str, _ = self.chess_model_api_client('set_comment', self.state_str, comment=comment)
+        self.state_str, _ = chess_model_api_client('set_comment', self.state_str, comment=comment)
         self.ce.save_button.configure(state=tk.DISABLED)
         self.ce.editor.edit_modified(False)
         self.ct.update_tree_node(self.state_str["node_str"], self.ce.tree_node)
 
     def diddle_var(self, diddle):
         san = self.c.next_move_str.get()
-        # self.state_str = self.cm.diddle_var(self.state_str, diddle, san)
-        self.state_str, _ = self.chess_model_api_client('diddle_var', self.state_str, diddle=diddle, san=san)
+        self.state_str, _ = chess_model_api_client('diddle_var', self.state_str, diddle=diddle, san=san)
         self.diddle_var_tree(diddle)
         # self.c.update_display(self.state_str["has_parent"], self.state_str["variations"])
         if diddle == 'remove':
@@ -204,42 +184,45 @@ class App(object):
             if self.check_comment():
                 # get the moves from the beginning of the game to the selected tree node
                 moves = self.ct.get_tree_moves()
-                self.state_str = self.cm.move_to(self.state_str, moves)
+                self.state_str, _ = chess_model_api_client('move_to', self.state_str, moves=moves)
                 self.update_display()
 
     # from buttons
     def move_back_full(self):
         if self.check_comment():
-            self.state_str = self.cm.move_back_full(self.state_str)
+            self.state_str, _ = chess_model_api_client('move_back_full', self.state_str)
             self.update_display()
             self.close_all_but_current()
 
     def move_back(self):
         if self.check_comment():
-            self.state_str = self.cm.move_back(self.state_str)
+            self.state_str, _ = chess_model_api_client('move_back', self.state_str)
             self.update_display()
             self.close_all_but_current()
 
     # from board click
     def move(self, click1, click2):
         if self.check_comment():
-            self.state_str, added, san, move_str = self.cm.move_add(self.state_str, click1, click2)
+            self.state_str, outputs = chess_model_api_client('move_add', self.state_str, start=click1, destination=click2)
+            added = outputs['added']
+            san = outputs['san']
+            move_str = outputs['move_str']
             if added:
                 # update the tree
                 self.ct.add_move_to_tree(move_str)
                 # update the option menu? not necessary, since we're about to leave
-            self.state_str = self.cm.move_frwd(self.state_str, san)
+            self.state_str, _ = chess_model_api_client('move_frwd', self.state_str, san=san)
             self.update_display()
 
     def move_frwd(self):
         if self.check_comment():
-            self.state_str = self.cm.move_frwd(self.state_str, self.c.next_move_str.get())
+            self.state_str, _ = chess_model_api_client('move_frwd', self.state_str, san=self.c.next_move_str.get())
             self.update_display()
             self.close_all_but_current()
 
     def move_frwd_full(self):
         if self.check_comment():
-            self.state_str = self.cm.move_frwd_full(self.state_str)
+            self.state_str, _ = chess_model_api_client('move_frwd_full', self.state_str)
             self.update_display()
             self.close_all_but_current()
 
@@ -258,10 +241,10 @@ class App(object):
             with open(filename,"r") as f:
                 self.state_str["pgn_str"] = f.read()
             self.state_str["moves"] = []
-            self.state_str = self.cm.move_back_full(self.state_str)
+            self.state_str, _ = chess_model_api_client('move_back_full', self.state_str)
             self.set_player()
 
-            tree_dict = self.cm.make_tree(self.state_str)
+            tree_dict = chess_model_api_make_tree(self.state_str)
 
             self.update_display()
             self.make_tree_builtin(tree_dict)
