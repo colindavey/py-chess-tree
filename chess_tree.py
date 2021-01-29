@@ -726,6 +726,7 @@ class ChessTree(tk.Frame):
         self.tree.selection_set(self.get_root_node())
         # self.tree.see(tree_node)
         if len(variations) > 0:
+            print("*** from make_tree")
             self.update_tree_selection_2ndary(variations[0])
 
     def tree_pgn_node_recur(self, dict_node, parent):
@@ -875,15 +876,18 @@ class ChessTree(tk.Frame):
             # self.tree.column('#0', minwidth=520)
 
     def get_node_with_move(self, tree_node, move):
+        # print('* get_node_with_move', move)
         for child in self.tree.get_children(tree_node):
             tmptext = self.tree.item(child, 'text')
             tmptext_bits = tmptext.split(' ')
             tmptext = tmptext_bits[1]
             if tmptext == move:
                 # !!!why doesn't the return work here? 
-                # return child
-                break
+                return child
+                # break
+        print('*  get_node_with_move finished loop')
         return child
+        # pass
 
     def update_tree(self, moves, next_move):
         # select the node of the current move by traversing through the moves.
@@ -897,11 +901,13 @@ class ChessTree(tk.Frame):
                 tree_node = self.get_node_with_move(tree_node, tmp_next_move)
         self.tree.selection_set(tree_node)
         # self.tree.see(tree_node)
+        print("*** from update_tree")
         self.update_tree_selection_2ndary(next_move)
 
     def update_tree_selection_2ndary(self, next_move):
         # untag the previous selection variation
         # premise is that there is at most one
+        print("** update_tree_selection_2ndary", next_move)
         tagged_ids = self.tree.tag_has("sel_var")
         if len(tagged_ids) > 0:
             self.tree.item(tagged_ids[0], tags='all')
@@ -1302,6 +1308,7 @@ class App(object):
     def next_move_str_trace(self, a, b, c):
         next_move = self.c.next_move_str.get()
         # for built-in
+        print("*** from next_move_str_trace")
         self.ct.update_tree_selection_2ndary(next_move)
 
     # for built-in
