@@ -4,11 +4,12 @@ from tkinter import messagebox
 import tkinter.filedialog as tkfiledialog
 
 from comment_editor import CommentEditor
-from components import BoardView
-from components import Controls
-from components import ChessListing
-from components import ChessTree
+from board_view import BoardView
+from controls import Controls
+from chess_listing import ChessListing
+from chess_tree import ChessTree
 from chess_model_api import ChessModelAPI
+
 from file_rank_square import file_rank2square_name
 from file_rank_square import square_name2file_rank
 
