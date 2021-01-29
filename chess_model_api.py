@@ -5,71 +5,89 @@ import io
 
 from file_rank_square import file_rank2square_name
 
-#####################################
-# Game Model Utility Functions
+class ChessModelAPI(object):
+    def __init__(self):
+        pass
 
-# Reports - not used or tested much
-def get_numbered_moves(pgn_node):
-    moves = pgn_node2moves(pgn_node)
-    # add the numbers to all of white's moves
-    for p in range(0, len(moves), 2):
-        san = moves[p]
-        moves[p] = str(p // 2 + 1) + '. ' + san
-    return moves
+    def init_state(self, is_white):
+        game = chess.pgn.Game()
+        return init_pgn_state(game, is_white)
 
-def print_listing_vertical(pgn_node):
-    moves = get_numbered_moves(pgn_node)
-    num_moves = len(moves)
-    for p in range(0, num_moves):
-        # if it's white's move, make the 1st half of the line.
-        if p % 2 == 0:
-            tmpstr = moves[p]
-            # if it's the last move, then there is no black bit to append. so print it now
-            if p == num_moves - 1:
-                print(tmpstr)
-        # if it's black's move, make the 2nd half of the line and print it.
+    ###########################
+    # moves
+    ###########################
+
+    def move_to(self, state_str, moves):
+        game, node = calc_game_node(state_str)
+        node = game_moves2node(game, moves)
+        return make_state_str(game, node)
+
+    def move_back_full(self, state_str):
+        game, node = calc_game_node(state_str)
+        node = game
+        return make_state_str(game, node)
+
+    def move_back(self, state_str):
+        game, node = calc_game_node(state_str)
+        node = node.parent
+        return make_state_str(game, node)
+
+    def move_frwd(self, state_str, san):
+        game, node = calc_game_node(state_str)
+        node = get_var_from_san(node, san)
+        return make_state_str(game, node)
+
+    def move_frwd_full(self, state_str):
+        game, node = calc_game_node(state_str)
+        while not node.is_end():
+            node = node.variations[0]
+        return make_state_str(game, node)
+
+    def set_comment(self, state_str, comment):
+        game, node = calc_game_node(state_str)
+        node.comment = comment
+        return make_state_str(game, node)
+
+    def diddle_var(self, state_str, diddle, san):
+        game, node = calc_game_node(state_str)
+        print(diddle + 'Var')
+        diddle_node = get_var_from_san(node, san)
+        if diddle == 'remove':
+            node.remove_variation(diddle_node)
+        elif diddle == 'promote2main':
+            node.promote_to_main(diddle_node)
+        elif diddle == 'promote':
+            node.promote(diddle_node)
+        elif diddle == 'demote':
+            node.demote(diddle_node)
+        return make_state_str(game, node)
+
+    ####################################
+    # Doesn't change board state, but changes other state
+    ####################################
+
+    def move_add(self, state_str, start, destination):
+        game, node = calc_game_node(state_str)
+        print('move:', start.file, start.rank, destination.file, destination.rank)
+        uci = file_rank2square_name(start.file, start.rank) + file_rank2square_name(destination.file, destination.rank)
+        san = calc_san(node, start, destination)
+        if node.has_variation(chess.Move.from_uci(uci)):
+            added = False
+            new_node = node.variation(chess.Move.from_uci(uci))
         else:
-            tmpstr += '\t' + moves[p]
-            print(tmpstr)
+            added = True
+            new_node = node.add_variation(chess.Move.from_uci(uci))
+            # node.add_variation(chess.Move.from_uci(uci))
+        return make_state_str(game, node), added, san, make_san_node_str(new_node)
 
-def print_listing_horizontal(pgn_node):
-    moves = get_numbered_moves(pgn_node)
-    num_moves = len(moves)
-    tmpstr = ''
-    for p in range(0, num_moves):
-        tmpstr += moves[p]
-        if p != num_moves - 1:
-            tmpstr += ' '
-    print(tmpstr)
-    return tmpstr
+    def set_headers(self, state_str, is_white):
+        game, node = calc_game_node(state_str)
+        game = set_headers(game, is_white)
+        return make_state_str(game, node)
 
-def print_pgn_node_hybrid(pgn_node):
-    print_listing_horizontal(pgn_node)
-    print_pgn_node_recur(pgn_node, True)
-
-def print_pgn_node_recur(pgn_node, initial=False, ply_num=0):
-    # if pgn_node.parent is not None:
-    if initial:
-        if pgn_node.parent is not None:
-            ply_num = pgn_node.parent.board().ply()
-    else:
-        make_san_node_str(pgn_node, init_ply_num=ply_num)
-    if not pgn_node.is_end():
-        for p in range(0, len(pgn_node.variations)):
-            print_pgn_node_recur(pgn_node.variations[p], ply_num=ply_num)
-
-# def report(state_str):
-#     # print('pgn:')
-#     # print(state_str.game_py)
-#     # print('tree:')
-#     # print_pgn_node_recur(state_str.game_py, True)
-#     # print('listing:')
-#     # print_listing_vertical(state_str.node_py)
-#     # print('horizontal listing:')
-#     # print_listing_horizontal(state_str.node_py)
-#     # print('hybrid horizontal tree:')
-#     # print_pgn_node_hybrid(state_str.node_py)
-#     pass
+    def make_tree(self, state_str):
+        game, _ = calc_game_node(state_str)
+        return make_tree_dict(game) 
 
 # Critical code
 
@@ -201,95 +219,74 @@ def make_san_node_str(pgn_node, init_ply_num=0):
     if not pgn_node.parent.board().turn:
         turn_str += '..'
     turn_str += ' '
+    str_out = turn_str + pgn_node.san() + make_brief_comment_str(pgn_node.comment)
+
     spaces = (ply_num-(init_ply_num+1)) * '  '
     end_str = ""
     if pgn_node.is_end():
         end_str = " *"
-    comment_str = make_brief_comment_str(pgn_node.comment)
-    str_out = turn_str + pgn_node.san() + comment_str
     print(spaces + str_out + end_str)
     return str_out
 
-class ChessModelAPI(object):
-    def __init__(self):
-        pass
+# Reports - not used or tested much
+def get_numbered_moves(pgn_node):
+    moves = pgn_node2moves(pgn_node)
+    # add the numbers to all of white's moves
+    for p in range(0, len(moves), 2):
+        san = moves[p]
+        moves[p] = str(p // 2 + 1) + '. ' + san
+    return moves
 
-    def init_state(self, is_white):
-        game = chess.pgn.Game()
-        return init_pgn_state(game, is_white)
-
-    ###########################
-    # moves
-    ###########################
-
-    def move_to(self, state_str, moves):
-        game, node = calc_game_node(state_str)
-        node = game_moves2node(game, moves)
-        return make_state_str(game, node)
-
-    def move_back_full(self, state_str):
-        game, node = calc_game_node(state_str)
-        node = game
-        return make_state_str(game, node)
-
-    def move_back(self, state_str):
-        game, node = calc_game_node(state_str)
-        node = node.parent
-        return make_state_str(game, node)
-
-    def move_frwd(self, state_str, san):
-        game, node = calc_game_node(state_str)
-        node = get_var_from_san(node, san)
-        return make_state_str(game, node)
-
-    def move_frwd_full(self, state_str):
-        game, node = calc_game_node(state_str)
-        while not node.is_end():
-            node = node.variations[0]
-        return make_state_str(game, node)
-
-    def set_comment(self, state_str, comment):
-        game, node = calc_game_node(state_str)
-        node.comment = comment
-        return make_state_str(game, node)
-
-    def diddle_var(self, state_str, diddle, san):
-        game, node = calc_game_node(state_str)
-        print(diddle + 'Var')
-        diddle_node = get_var_from_san(node, san)
-        if diddle == 'remove':
-            node.remove_variation(diddle_node)
-        elif diddle == 'promote2main':
-            node.promote_to_main(diddle_node)
-        elif diddle == 'promote':
-            node.promote(diddle_node)
-        elif diddle == 'demote':
-            node.demote(diddle_node)
-        return make_state_str(game, node)
-
-    ####################################
-    # Doesn't change board state, but changes other state
-    ####################################
-
-    def move_add(self, state_str, start, destination):
-        game, node = calc_game_node(state_str)
-        print('move:', start.file, start.rank, destination.file, destination.rank)
-        uci = file_rank2square_name(start.file, start.rank) + file_rank2square_name(destination.file, destination.rank)
-        san = calc_san(node, start, destination)
-        if node.has_variation(chess.Move.from_uci(uci)):
-            added = False
-            new_node = node.variation(chess.Move.from_uci(uci))
+def print_listing_vertical(pgn_node):
+    moves = get_numbered_moves(pgn_node)
+    num_moves = len(moves)
+    for p in range(0, num_moves):
+        # if it's white's move, make the 1st half of the line.
+        if p % 2 == 0:
+            tmpstr = moves[p]
+            # if it's the last move, then there is no black bit to append. so print it now
+            if p == num_moves - 1:
+                print(tmpstr)
+        # if it's black's move, make the 2nd half of the line and print it.
         else:
-            added = True
-            new_node = node.add_variation(chess.Move.from_uci(uci))
-            # node.add_variation(chess.Move.from_uci(uci))
-        return make_state_str(game, node), added, san, make_san_node_str(new_node)
+            tmpstr += '\t' + moves[p]
+            print(tmpstr)
 
-    def set_headers(self, state_str, is_white):
-        game, node = calc_game_node(state_str)
-        game = set_headers(game, is_white)
-        return make_state_str(game, node)
+def print_listing_horizontal(pgn_node):
+    moves = get_numbered_moves(pgn_node)
+    num_moves = len(moves)
+    tmpstr = ''
+    for p in range(0, num_moves):
+        tmpstr += moves[p]
+        if p != num_moves - 1:
+            tmpstr += ' '
+    print(tmpstr)
+    return tmpstr
 
-    def make_tree(self, state_str):
-        game, _ = calc_game_node(state_str)
-        return make_tree_dict(game) 
+def print_pgn_node_hybrid(pgn_node):
+    print_listing_horizontal(pgn_node)
+    print_pgn_node_recur(pgn_node, True)
+
+def print_pgn_node_recur(pgn_node, initial=False, ply_num=0):
+    # if pgn_node.parent is not None:
+    if initial:
+        if pgn_node.parent is not None:
+            ply_num = pgn_node.parent.board().ply()
+    else:
+        make_san_node_str(pgn_node, init_ply_num=ply_num)
+    if not pgn_node.is_end():
+        for p in range(0, len(pgn_node.variations)):
+            print_pgn_node_recur(pgn_node.variations[p], ply_num=ply_num)
+
+# def report(state_str):
+#     # print('pgn:')
+#     # print(state_str.game_py)
+#     # print('tree:')
+#     # print_pgn_node_recur(state_str.game_py, True)
+#     # print('listing:')
+#     # print_listing_vertical(state_str.node_py)
+#     # print('horizontal listing:')
+#     # print_listing_horizontal(state_str.node_py)
+#     # print('hybrid horizontal tree:')
+#     # print_pgn_node_hybrid(state_str.node_py)
+#     pass
