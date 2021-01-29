@@ -5,6 +5,22 @@ import io
 
 from file_rank_square import file_rank2square_name
 
+def chess_model_api(operation, state_in, inputs={}):
+    game, node = calc_game_node(state_in)
+    outputs = {}
+    # cm = ChessModelAPI()
+    # switcher = {
+
+    # }
+    if operation == "move_to":
+        node = game_moves2node(game, inputs["moves"])
+    elif operation == "set_headers":
+        game = set_headers(game, inputs["is_white"])
+    elif operation == "set_comment":
+        node.comment = inputs["comment"]
+
+    return make_state_str(game, node), outputs
+
 class ChessModelAPI(object):
     def __init__(self):
         pass
