@@ -268,7 +268,7 @@ class ChessModelAPI(object):
         return make_state_str(game, node)
 
     ####################################
-    # Doesn't change board state
+    # Doesn't change board state, but changes other state
     ####################################
 
     def move_add(self, state_str, start, destination):
