@@ -310,7 +310,7 @@ class App(object):
         self.bv.update_display(self.state_str["piece_distrib"])
 
         click_location = self.bv.get_click_location(event)
-        print('click:', click_location.file, click_location.rank)
+        print('click:', click_location["file"], click_location["rank"])
 
         # If clicked on piece of side w turn, then it's click1.
         #   highlight the piece and all legal moves
@@ -327,7 +327,7 @@ class App(object):
             if self.click1 != []:
                 click2 = click_location
                 for dest in self.legal_dests:
-                    if click2.file == dest.file and click2.rank == dest.rank:
+                    if click2["file"] == dest["file"] and click2["rank"] == dest["rank"]:
                         self.move(self.click1, click2)
                         break
 
@@ -336,9 +336,9 @@ class App(object):
             self.legal_dests = []
 
     def get_legal_dests_from(self, board_coords):
-        if get_piece_color(self.state_str["piece_distrib"][board_coords.rank][board_coords.file]) != self.state_str["turn"]:
+        if get_piece_color(self.state_str["piece_distrib"][board_coords["rank"]][board_coords["file"]]) != self.state_str["turn"]:
             return False, []
-        start_coord = file_rank2square_name(board_coords.file, board_coords.rank)
+        start_coord = file_rank2square_name(board_coords["file"], board_coords["rank"])
         legal_moves = list(filter(lambda m : m[0:2] == start_coord, self.state_str["legal_moves"]))
         # maps e.g. ["e2e3", "e2e4"] to ["e3", "e4"] to [{f : 4, r : 2}, {f : 4, r : 3}]
         dest_list = list(map(

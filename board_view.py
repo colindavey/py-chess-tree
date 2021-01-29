@@ -3,7 +3,8 @@ import os
 import os.path
 import tkinter as tk
 
-from file_rank_square import BoardCoords
+# from file_rank_square import BoardCoords
+from file_rank_square import board_coords
 
 ####################################
 # GUI BOARD
@@ -100,7 +101,8 @@ class BoardView(tk.Frame):
             rank = 7
         # reversing rank/file as necessary for W/B
         file_, rank = self.flip_file_rank(file_, rank)
-        return BoardCoords(file_, rank)
+        # return BoardCoords(file_, rank)
+        return board_coords(file_, rank)
 
     def update_display(self, piece_distrib):
         """ draw an empty board then draw each of the
@@ -155,7 +157,8 @@ class BoardView(tk.Frame):
     def draw_highlights(self, highlight_list):
         tile = self.images['highlight_tile']
         for item in highlight_list:
-            self.draw_tile(item.file, item.rank, tile)
+            # self.draw_tile(item.file, item.rank, tile)
+            self.draw_tile(item["file"], item["rank"], tile)
 
     # reversing rank so rank 0 is the bottom (chess) rather than top (tk) for White
     # reversing file so file 0 is the right (chess) rather than top (tk) for Black

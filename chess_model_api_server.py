@@ -41,7 +41,7 @@ def chess_model_api(operation, state_in, inputs={}):
     elif operation == 'move_add':
         start = inputs['start']
         destination = inputs['destination']
-        uci = file_rank2square_name(start.file, start.rank) + file_rank2square_name(destination.file, destination.rank)
+        uci = file_rank2square_name(start["file"], start["rank"]) + file_rank2square_name(destination["file"], destination["rank"])
         san = calc_san(node, start, destination)
         if node.has_variation(chess.Move.from_uci(uci)):
             added = False
@@ -158,7 +158,7 @@ def calc_game_node(state_str):
     # return state_str["game_py"], state_str["node_py"]
 
 def calc_san(pgn_node, start, destination):
-    uci = file_rank2square_name(start.file, start.rank) + file_rank2square_name(destination.file, destination.rank)
+    uci = file_rank2square_name(start["file"], start["rank"]) + file_rank2square_name(destination["file"], destination["rank"])
     return pgn_node.board().san(chess.Move.from_uci(uci))
 
 def get_var_from_san(pgn_node, san):
