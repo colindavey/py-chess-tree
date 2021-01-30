@@ -92,7 +92,7 @@ def make_brief_comment_str(comment_str):
 
 def make_state(pgn_game, pgn_node):
     board = pgn_node.board()
-    state_str = {}
+    state = {}
     piece_distrib = []
     for file_ in range(0,8):
         rank_array = []
@@ -104,30 +104,30 @@ def make_state(pgn_game, pgn_node):
                 piece_symbol = piece.symbol()
             rank_array.append(piece_symbol)
         piece_distrib.append(rank_array)
-    state_str["piece_distrib"] = piece_distrib
-    state_str["fen"] = board.fen()
+    state["piece_distrib"] = piece_distrib
+    state["fen"] = board.fen()
 
-    state_str["turn"] = 'W' if board.turn else 'B'
-    state_str["legal_moves"] = [str(m) for m in board.legal_moves]
+    state["turn"] = 'W' if board.turn else 'B'
+    state["legal_moves"] = [str(m) for m in board.legal_moves]
 
     variations = []
     for variation in pgn_node.variations:
         variations.append(variation.san())
-    state_str["variations"] = variations
-    state_str["comment"] = pgn_node.comment
-    state_str["has_parent"] = pgn_node.parent is not None
-    state_str["moves"] = pgn_node2moves(pgn_node)
-    state_str["pgn_str"] = game2pgn_str(pgn_game)
-    state_str["player_white"] = pgn_game.headers['White']
-    state_str["player_black"] = pgn_game.headers['Black']
-    state_str["root_node_str"] = make_root_node_str(pgn_game)
+    state["variations"] = variations
+    state["comment"] = pgn_node.comment
+    state["has_parent"] = pgn_node.parent is not None
+    state["moves"] = pgn_node2moves(pgn_node)
+    state["pgn_str"] = game2pgn_str(pgn_game)
+    state["player_white"] = pgn_game.headers['White']
+    state["player_black"] = pgn_game.headers['Black']
+    state["root_node_str"] = make_root_node_str(pgn_game)
     if pgn_node.parent is None:
-        state_str["node_str"] = state_str["root_node_str"]
+        state["node_str"] = state["root_node_str"]
     else:
-        state_str["node_str"] = make_san_node_str(pgn_node)
-    # state_str["game_py"] = pgn_game
-    # state_str["node_py"] = pgn_node
-    return state_str
+        state["node_str"] = make_san_node_str(pgn_node)
+    # state["game_py"] = pgn_game
+    # state["node_py"] = pgn_node
+    return state
 
 def make_root_node_str(game_py):
     return 'White: ' + game_py.headers['White'] + '. Black: ' + game_py.headers['Black'] + '.' + \
@@ -250,15 +250,15 @@ def print_pgn_node_recur(pgn_node, initial=False, ply_num=0):
         for p in range(0, len(pgn_node.variations)):
             print_pgn_node_recur(pgn_node.variations[p], ply_num=ply_num)
 
-# def report(state_str):
+# def report(state):
 #     # print('pgn:')
-#     # print(state_str.game_py)
+#     # print(state.game_py)
 #     # print('tree:')
-#     # print_pgn_node_recur(state_str.game_py, True)
+#     # print_pgn_node_recur(state.game_py, True)
 #     # print('listing:')
-#     # print_listing_vertical(state_str.node_py)
+#     # print_listing_vertical(state.node_py)
 #     # print('horizontal listing:')
-#     # print_listing_horizontal(state_str.node_py)
+#     # print_listing_horizontal(state.node_py)
 #     # print('hybrid horizontal tree:')
-#     # print_pgn_node_hybrid(state_str.node_py)
+#     # print_pgn_node_hybrid(state.node_py)
 #     pass

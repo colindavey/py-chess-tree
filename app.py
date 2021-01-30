@@ -55,10 +55,10 @@ class App(object):
     def __init__(self, parent=None):
         # Create the chess model (cm)
         is_white = True
-        self.state_str = json.loads(chess_model_api_init())
-        self.state_str, _ = chess_model_api_client('set_headers', self.state_str, is_white=is_white)
+        self.state = json.loads(chess_model_api_init())
+        self.state, _ = chess_model_api_client('set_headers', self.state, is_white=is_white)
         tree_dict = json.loads(
-            chess_model_api_make_tree(json_state(self.state_str)))
+            chess_model_api_make_tree(json_state(self.state)))
 
         self.title_str = 'python chess tree, Colin Davey v alpha'
         self.parent = parent
@@ -153,16 +153,16 @@ class App(object):
         # self.is_white is a control variable attached to the White/Black radio buttons
         is_white = self.is_white.get()
         self.bv.set_player(is_white)
-        self.bv.update_display(self.state_str["piece_distrib"])
-        self.state_str, _ = chess_model_api_client('set_headers', self.state_str, is_white=is_white)
+        self.bv.update_display(self.state["piece_distrib"])
+        self.state, _ = chess_model_api_client('set_headers', self.state, is_white=is_white)
 
-        self.ct.update_tree_node(self.state_str["root_node_str"], self.ct.get_root_node())
+        self.ct.update_tree_node(self.state["root_node_str"], self.ct.get_root_node())
 
     def handle_cl_click(self, event):
         moves = self.cl.handle_click(event)
         print(moves)
         if len(moves) > 0:
-            self.state_str, _ = chess_model_api_client('move_to', self.state_str, moves=moves)
+            self.state, _ = chess_model_api_client('move_to', self.state, moves=moves)
             self.update_display()
             self.close_all_but_current()
 
@@ -173,19 +173,19 @@ class App(object):
         comment = self.ce.editor.get(1.0, tk.END)
         comment = comment[0:-1]
         print('comment:', comment)
-        self.state_str, _ = chess_model_api_client('set_comment', self.state_str, comment=comment)
+        self.state, _ = chess_model_api_client('set_comment', self.state, comment=comment)
         self.ce.save_button.configure(state=tk.DISABLED)
         self.ce.editor.edit_modified(False)
-        self.ct.update_tree_node(self.state_str["node_str"], self.ce.tree_node)
+        self.ct.update_tree_node(self.state["node_str"], self.ce.tree_node)
 
     def diddle_var(self, diddle):
         san = self.c.next_move_str.get()
-        self.state_str, _ = chess_model_api_client('diddle_var', self.state_str, diddle=diddle, san=san)
+        self.state, _ = chess_model_api_client('diddle_var', self.state, diddle=diddle, san=san)
         self.diddle_var_tree(diddle)
-        # self.c.update_display(self.state_str["has_parent"], self.state_str["variations"])
+        # self.c.update_display(self.state["has_parent"], self.state["variations"])
         if diddle == 'remove':
             san = ''
-        self.c.update_next_move_option_menu(self.state_str["variations"], san)
+        self.c.update_next_move_option_menu(self.state["variations"], san)
 
     # moves
 
@@ -195,26 +195,26 @@ class App(object):
             if self.check_comment():
                 # get the moves from the beginning of the game to the selected tree node
                 moves = self.ct.get_tree_moves()
-                self.state_str, _ = chess_model_api_client('move_to', self.state_str, moves=moves)
+                self.state, _ = chess_model_api_client('move_to', self.state, moves=moves)
                 self.update_display()
 
     # from buttons
     def move_back_full(self):
         if self.check_comment():
-            self.state_str, _ = chess_model_api_client('move_back_full', self.state_str)
+            self.state, _ = chess_model_api_client('move_back_full', self.state)
             self.update_display()
             self.close_all_but_current()
 
     def move_back(self):
         if self.check_comment():
-            self.state_str, _ = chess_model_api_client('move_back', self.state_str)
+            self.state, _ = chess_model_api_client('move_back', self.state)
             self.update_display()
             self.close_all_but_current()
 
     # from board click
     def move(self, click1, click2):
         if self.check_comment():
-            self.state_str, outputs = chess_model_api_client('move_add', self.state_str, start=click1, destination=click2)
+            self.state, outputs = chess_model_api_client('move_add', self.state, start=click1, destination=click2)
             added = outputs['added']
             san = outputs['san']
             move_str = outputs['move_str']
@@ -222,18 +222,18 @@ class App(object):
                 # update the tree
                 self.ct.add_move_to_tree(move_str)
                 # update the option menu? not necessary, since we're about to leave
-            self.state_str, _ = chess_model_api_client('move_frwd', self.state_str, san=san)
+            self.state, _ = chess_model_api_client('move_frwd', self.state, san=san)
             self.update_display()
 
     def move_frwd(self):
         if self.check_comment():
-            self.state_str, _ = chess_model_api_client('move_frwd', self.state_str, san=self.c.next_move_str.get())
+            self.state, _ = chess_model_api_client('move_frwd', self.state, san=self.c.next_move_str.get())
             self.update_display()
             self.close_all_but_current()
 
     def move_frwd_full(self):
         if self.check_comment():
-            self.state_str, _ = chess_model_api_client('move_frwd_full', self.state_str)
+            self.state, _ = chess_model_api_client('move_frwd_full', self.state)
             self.update_display()
             self.close_all_but_current()
 
@@ -250,13 +250,13 @@ class App(object):
         if filename != '':
    #        # !!!Error handling
             with open(filename,"r") as f:
-                self.state_str["pgn_str"] = f.read()
-            self.state_str["moves"] = []
-            self.state_str, _ = chess_model_api_client('move_back_full', self.state_str)
+                self.state["pgn_str"] = f.read()
+            self.state["moves"] = []
+            self.state, _ = chess_model_api_client('move_back_full', self.state)
             self.set_player()
 
             tree_dict = json.loads(
-                chess_model_api_make_tree(json_state(self.state_str)))
+                chess_model_api_make_tree(json_state(self.state)))
 
             self.update_display()
             self.make_tree_builtin(tree_dict)
@@ -268,20 +268,20 @@ class App(object):
     # Doesn't directly address chess model below here
 
     def update_display(self):
-        self.bv.update_display(self.state_str["piece_distrib"])
-        self.c.update_display(self.state_str["has_parent"], self.state_str["variations"])
+        self.bv.update_display(self.state["piece_distrib"])
+        self.c.update_display(self.state["has_parent"], self.state["variations"])
         # make sure the appropriate tree node is selected based on the current move
         # and the appropriate variation of the move is secondary selected
         next_move = self.c.next_move_str.get()
         # for built-in
-        self.ct.update_tree(self.state_str["moves"], next_move)
-        self.cl.update_listing(self.state_str["moves"])
+        self.ct.update_tree(self.state["moves"], next_move)
+        self.cl.update_listing(self.state["moves"])
         self.update_ce()
         self.ct.horz_scrollbar_magic()
 
     def update_ce(self):
         if self.ce_root is not None:
-            comment = self.state_str["comment"]
+            comment = self.state["comment"]
             self.ce.editor.replace(1.0, tk.END, comment)
             self.ce.save_button.configure(state=tk.DISABLED)
             self.ce.editor.edit_modified(False)
@@ -291,7 +291,7 @@ class App(object):
 
     def make_tree_builtin(self, tree_dict):
         # new tree for built-in
-        self.ct.make_tree(self.state_str["variations"], tree_dict)
+        self.ct.make_tree(self.state["variations"], tree_dict)
         self.ct.horz_scrollbar_magic()
 
     # when the next move menu changes, next_move_str changes bringing control to here.
@@ -319,7 +319,7 @@ class App(object):
         self.ce_root = None
 
     def handle_bv_click(self, event):
-        self.bv.update_display(self.state_str["piece_distrib"])
+        self.bv.update_display(self.state["piece_distrib"])
 
         click_location = self.bv.get_click_location(event)
         print('click:', click_location["file"], click_location["rank"])
@@ -348,10 +348,10 @@ class App(object):
             self.legal_dests = []
 
     def get_legal_dests_from(self, board_coords):
-        if get_piece_color(self.state_str["piece_distrib"][board_coords["rank"]][board_coords["file"]]) != self.state_str["turn"]:
+        if get_piece_color(self.state["piece_distrib"][board_coords["rank"]][board_coords["file"]]) != self.state["turn"]:
             return False, []
         start_coord = file_rank2square_name(board_coords["file"], board_coords["rank"])
-        legal_moves = list(filter(lambda m : m[0:2] == start_coord, self.state_str["legal_moves"]))
+        legal_moves = list(filter(lambda m : m[0:2] == start_coord, self.state["legal_moves"]))
         # maps e.g. ["e2e3", "e2e4"] to ["e3", "e4"] to [{f : 4, r : 2}, {f : 4, r : 3}]
         dest_list = list(map(
             lambda m : square_name2file_rank(m[2:]),
@@ -360,7 +360,7 @@ class App(object):
 
     def remove_var(self):
         self.diddle_var('remove')
-        self.c.update_display(self.state_str["has_parent"], self.state_str["variations"])
+        self.c.update_display(self.state["has_parent"], self.state["variations"])
 
     def promote2main_var(self):
         self.diddle_var('promote2main')
@@ -389,12 +389,8 @@ class App(object):
         filename = tkfiledialog.asksaveasfilename(defaultextension='.pgn')
         if filename != '':
             f = open(filename, 'w')
-            print(self.state_str["pgn_str"], file=f)
+            print(self.state["pgn_str"], file=f)
             f.close()
-            # This no doubt won't work without "import chess"
-            # f = open(filename+"2", 'w')
-            # print(self.state_str["game_py"], file=f)
-            # f.close()
 
     def open_all(self):
         self.ct.open_all(True)
@@ -443,25 +439,6 @@ class App(object):
         tk.mainloop()
 
 if __name__ == "__main__":
-    # if not os.path.exists(DATA_DIR):
-    #     ''' basic check - if there are files missing from the data directory, the
-    #     program will still fail '''
-    #     # dl = raw_input("Cannot find chess images directory.  Download from website? (Y/n)")
-    #     dl = input("Cannot find chess images directory.  Download from website? (Y/n)")
-    #     if dl.lower() == "n":
-    #         print("No image files found, quitting.")
-    #         exit(0)
-    #     print("Creating directory: %s" % os.path.join(os.getcwd(), DATA_DIR))
-    #     import urllib
-    #
-    #     os.mkdir(DATA_DIR)
-    #     url_format = "http://python4kids.files.wordpress.com/2013/04/%s"
-    #     for k, v in TILES.items():
-    #         url = url_format % v
-    #         target_filename = os.path.join(DATA_DIR, v)
-    #         print("Downloading file: %s" % v)
-    #         urllib.request.urlretrieve(url, target_filename)
-
     the_parent = tk.Tk()
     app = App(the_parent)
     app.run()
