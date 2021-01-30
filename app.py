@@ -1,4 +1,6 @@
 # /usr/bin/python
+
+import json
 import tkinter as tk
 from tkinter import messagebox
 import tkinter.filedialog as tkfiledialog
@@ -34,20 +36,29 @@ def geo_str2list(geo_str):
     geo = [int(i) for i in geo]
     return geo
 
+def json_state(state_in):
+    state_arg = json.dumps({
+        "pgn_str" : state_in["pgn_str"], 
+        "moves" : state_in["moves"]
+    })
+    return state_arg
+
 def chess_model_api_client(operation, state_in, **kwargs):
-    state_arg = {}
-    state_arg["pgn_str"] = state_in["pgn_str"]
-    state_arg["moves"] = state_in["moves"]
-    state_ret, outputs = chess_model_api(operation, state_arg, kwargs)
-    return state_ret, outputs
+    state_ret, outputs = chess_model_api(
+        operation, 
+        json_state(state_in), 
+        json.dumps(kwargs)
+    )
+    return json.loads(state_ret), json.loads(outputs)
 
 class App(object):
     def __init__(self, parent=None):
         # Create the chess model (cm)
         is_white = True
-        self.state_str = chess_model_api_init()
+        self.state_str = json.loads(chess_model_api_init())
         self.state_str, _ = chess_model_api_client('set_headers', self.state_str, is_white=is_white)
-        tree_dict = chess_model_api_make_tree(self.state_str)
+        tree_dict = json.loads(
+            chess_model_api_make_tree(json_state(self.state_str)))
 
         self.title_str = 'python chess tree, Colin Davey v alpha'
         self.parent = parent
@@ -244,7 +255,8 @@ class App(object):
             self.state_str, _ = chess_model_api_client('move_back_full', self.state_str)
             self.set_player()
 
-            tree_dict = chess_model_api_make_tree(self.state_str)
+            tree_dict = json.loads(
+                chess_model_api_make_tree(json_state(self.state_str)))
 
             self.update_display()
             self.make_tree_builtin(tree_dict)

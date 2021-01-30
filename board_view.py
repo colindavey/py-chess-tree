@@ -3,7 +3,6 @@ import os
 import os.path
 import tkinter as tk
 
-# from file_rank_square import BoardCoords
 from file_rank_square import board_coords
 
 ####################################
@@ -157,7 +156,6 @@ class BoardView(tk.Frame):
     def draw_highlights(self, highlight_list):
         tile = self.images['highlight_tile']
         for item in highlight_list:
-            # self.draw_tile(item.file, item.rank, tile)
             self.draw_tile(item["file"], item["rank"], tile)
 
     # reversing rank so rank 0 is the bottom (chess) rather than top (tk) for White

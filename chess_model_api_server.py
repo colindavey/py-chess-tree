@@ -1,4 +1,6 @@
 # /usr/bin/python
+
+import json
 import chess
 from chess import pgn
 import io
@@ -8,14 +10,15 @@ from file_rank_square import file_rank2square_name
 def chess_model_api_init():
     game = chess.pgn.Game()
     node = game
-    return make_state(game, node) 
+    return json.dumps(make_state(game, node))
 
 def chess_model_api_make_tree(state_in):
     game, _ = calc_game_node(state_in)
-    return make_tree_dict_recur(game) 
+    return json.dumps(make_tree_dict_recur(game))
 
 def chess_model_api(operation, state_in, inputs={}):
     game, node = calc_game_node(state_in)
+    inputs = json.loads(inputs)
     outputs = {}
 
     if operation == 'set_headers':
@@ -72,7 +75,7 @@ def chess_model_api(operation, state_in, inputs={}):
         elif diddle == 'demote':
             node.demote(diddle_node)
 
-    return make_state(game, node), outputs
+    return json.dumps(make_state(game, node)), json.dumps(outputs)
 
 # Critical code
 
@@ -150,12 +153,13 @@ def game_moves2node(game, moves):
         node = get_var_from_san(node, move)
     return node
 
-def calc_game_node(state_str):
-    pgn_str = io.StringIO(state_str["pgn_str"])
+def calc_game_node(state):
+    state = json.loads(state)
+    pgn_str = io.StringIO(state["pgn_str"])
     game = chess.pgn.read_game(pgn_str)
-    node = game_moves2node(game, state_str["moves"])
+    node = game_moves2node(game, state["moves"])
     return game, node
-    # return state_str["game_py"], state_str["node_py"]
+    # return state["game_py"], state["node_py"]
 
 def calc_san(pgn_node, start, destination):
     uci = file_rank2square_name(start["file"], start["rank"]) + file_rank2square_name(destination["file"], destination["rank"])
