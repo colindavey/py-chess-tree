@@ -10,7 +10,6 @@ def file_rank2square_name(file_, rank):
 def square_name2file_rank(square_name):
     file_ = ord(square_name[0]) - ord('a')
     rank = ord(square_name[1]) - ord('1')
-    # return BoardCoords(file_, rank)
     return board_coords(file_, rank)
 
 # Used by App and BoardView

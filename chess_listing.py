@@ -52,6 +52,7 @@ class ChessListing(tk.Frame):
                 # get all the rows
                 items = self.table.get_children('')
                 # go through all the rows building up the moves stop when we get to the clicked-on move
+                # !!!range
                 for p in range(0, len(items)):
                     values = self.table.item(items[p], 'values')
                     # add the first move of the row

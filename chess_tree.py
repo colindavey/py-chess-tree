@@ -141,6 +141,7 @@ class ChessTree(tk.Frame):
         # and the amount it increases for each level depth
         items = self.tree.tag_has('all')
         max_w = 0
+        # !!!range
         for q in range(0, len(items)):
             item = items[q]
             tmptxt = self.tree.item(item, 'text')
@@ -187,6 +188,7 @@ class ChessTree(tk.Frame):
             w = 0
             # if bbox != '':
             #     max_w = bbox[2]
+            # !!!range
             for q in range(0, len(items)):
                 bbox = self.tree.bbox(items[q], column='#0')
                 if bbox != '':
@@ -238,6 +240,7 @@ class ChessTree(tk.Frame):
         # select the node of the current move by traversing through the moves.
         # the premise is that all the moves are in the tree
         tree_node = self.get_root_node()
+        # !!!range
         for p in range(0, len(moves)):
             tmp_next_move = moves[p]
             childrenIDs = self.tree.get_children(tree_node)
@@ -295,6 +298,7 @@ class ChessTree(tk.Frame):
 
     def open_all(self, bool_in):
         items = self.tree.tag_has('all')
+        # !!!range
         for q in range(0, len(items)):
             self.tree.item(items[q], open=bool_in)
         # if closing, make sure that it's at least open to the current move

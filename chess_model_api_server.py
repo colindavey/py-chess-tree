@@ -212,6 +212,7 @@ def get_numbered_moves(pgn_node):
 def print_listing_vertical(pgn_node):
     moves = get_numbered_moves(pgn_node)
     num_moves = len(moves)
+    # !!!range
     for p in range(0, num_moves):
         # if it's white's move, make the 1st half of the line.
         if p % 2 == 0:
@@ -228,6 +229,7 @@ def print_listing_horizontal(pgn_node):
     moves = get_numbered_moves(pgn_node)
     num_moves = len(moves)
     tmpstr = ''
+    # !!!range
     for p in range(0, num_moves):
         tmpstr += moves[p]
         if p != num_moves - 1:
@@ -247,6 +249,7 @@ def print_pgn_node_recur(pgn_node, initial=False, ply_num=0):
     else:
         make_san_node_str(pgn_node, init_ply_num=ply_num)
     if not pgn_node.is_end():
+        # !!!range
         for p in range(0, len(pgn_node.variations)):
             print_pgn_node_recur(pgn_node.variations[p], ply_num=ply_num)
 
