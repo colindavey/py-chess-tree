@@ -60,7 +60,7 @@ class ChessTree(tk.Frame):
         # self.tree.configure(takefocus=1)
 
     def make_tree(self, variations, tree_dict):
-        print(tree_dict)
+        # print(tree_dict)
         # empty tree
         children = self.tree.get_children('')
         for child in children:
@@ -223,7 +223,7 @@ class ChessTree(tk.Frame):
             # self.tree.column('#0', minwidth=520)
 
     def get_node_with_move(self, tree_node, move):
-        # print('* get_node_with_move', move)
+        print('* get_node_with_move', move, len(self.tree.get_children(tree_node)))
         for child in self.tree.get_children(tree_node):
             tmptext = self.tree.item(child, 'text')
             tmptext_bits = tmptext.split(' ')
@@ -253,9 +253,11 @@ class ChessTree(tk.Frame):
         self.update_tree_selection_2ndary(next_move)
 
     def update_tree_selection_2ndary(self, next_move):
+        if next_move == '':
+            return
+        print("** update_tree_selection_2ndary", next_move)
         # untag the previous selection variation
         # premise is that there is at most one
-        print("** update_tree_selection_2ndary", next_move)
         tagged_ids = self.tree.tag_has("sel_var")
         if len(tagged_ids) > 0:
             self.tree.item(tagged_ids[0], tags='all')

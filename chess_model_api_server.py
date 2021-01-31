@@ -14,6 +14,7 @@ def chess_model_api_init():
 
 def chess_model_api_make_tree(state_in):
     game, _ = calc_game_node(state_in)
+    # print(print_node_tree(game))
     return json.dumps(make_tree_dict_recur(game))
 
 def chess_model_api(operation, state_in, inputs={}):
@@ -34,6 +35,12 @@ def chess_model_api(operation, state_in, inputs={}):
 
     elif operation == 'move_to':
         node = game_moves2node(game, inputs['moves'])
+        # print('horizontal')
+        # print(print_listing_horizontal(node))
+        # print('vertical')
+        # print(print_listing_vertical(node))
+        # print('recur')
+        # print(print_node_tree(node))
 
     elif operation == 'move_back_full':
         node = game
@@ -90,8 +97,8 @@ def make_brief_comment_str(comment_str):
         comment_str = ' {' + comment_str + '}'
     return comment_str
 
-def make_state(pgn_game, pgn_node):
-    board = pgn_node.board()
+def make_state(game, node):
+    board = node.board()
     state = {}
     piece_distrib = []
     for file_ in range(0,8):
@@ -111,41 +118,38 @@ def make_state(pgn_game, pgn_node):
     state["legal_moves"] = [str(m) for m in board.legal_moves]
 
     variations = []
-    for variation in pgn_node.variations:
+    for variation in node.variations:
         variations.append(variation.san())
     state["variations"] = variations
-    state["comment"] = pgn_node.comment
-    state["has_parent"] = pgn_node.parent is not None
-    state["moves"] = pgn_node2moves(pgn_node)
-    state["pgn_str"] = game2pgn_str(pgn_game)
-    state["player_white"] = pgn_game.headers['White']
-    state["player_black"] = pgn_game.headers['Black']
-    state["root_node_str"] = make_root_node_str(pgn_game)
-    if pgn_node.parent is None:
+    state["comment"] = node.comment
+    state["has_parent"] = node.parent is not None
+    state["moves"] = node2moves(node)
+    state["pgn_str"] = game2pgn_str(game)
+    state["player_white"] = game.headers['White']
+    state["player_black"] = game.headers['Black']
+    state["root_node_str"] = make_root_node_str(game)
+    if node.parent is None:
         state["node_str"] = state["root_node_str"]
     else:
-        state["node_str"] = make_san_node_str(pgn_node)
-    # state["game_py"] = pgn_game
-    # state["node_py"] = pgn_node
+        state["node_str"] = make_san_node_str(node)
+    # state["game_py"] = game
+    # state["node_py"] = node
     return state
 
-def make_root_node_str(game_py):
-    return 'White: ' + game_py.headers['White'] + '. Black: ' + game_py.headers['Black'] + '.' + \
-        make_brief_comment_str(game_py.comment)
+def make_root_node_str(game):
+    return 'White: ' + game.headers['White'] + '. Black: ' + game.headers['Black'] + '.' + \
+        make_brief_comment_str(game.comment)
 
-def make_tree_dict_recur(node_py):
+def make_tree_dict_recur(node):
     tree = {}
-    if not node_py.parent is not None:
-        tree["label"] = make_root_node_str(node_py)
+    if not node.parent is not None:
+        tree["label"] = make_root_node_str(node)
     else: 
-        tree["label"] = make_san_node_str(node_py)
+        tree["label"] = make_san_node_str(node)
     tree["children"] = []
-    if node_py.is_end():
-        return tree
-    else:
-        for variation in node_py.variations:
-            tree["children"].append(make_tree_dict_recur(variation))
-        return tree
+    for variation in node.variations:
+        tree["children"].append(make_tree_dict_recur(variation))
+    return tree
 
 def game_moves2node(game, moves):
     node = game
@@ -161,16 +165,16 @@ def calc_game_node(state):
     return game, node
     # return state["game_py"], state["node_py"]
 
-def calc_san(pgn_node, start, destination):
+def calc_san(node, start, destination):
     uci = file_rank2square_name(start["file"], start["rank"]) + file_rank2square_name(destination["file"], destination["rank"])
-    return pgn_node.board().san(chess.Move.from_uci(uci))
+    return node.board().san(chess.Move.from_uci(uci))
 
-def get_var_from_san(pgn_node, san):
-    return pgn_node.variation(pgn_node.board().parse_san(san))
+def get_var_from_san(node, san):
+    return node.variation(node.board().parse_san(san))
 
-def pgn_node2moves(pgn_node):
+def node2moves(node):
     moves = []
-    tmp_node = pgn_node
+    tmp_node = node
     while tmp_node.parent is not None:
         moves.append(tmp_node.san())
         tmp_node = tmp_node.parent
@@ -181,87 +185,67 @@ def game2pgn_str(game):
     exporter = chess.pgn.StringExporter(headers=True, variations=True, comments=True)
     return game.accept(exporter)
 
-def make_san_node_str(pgn_node, init_ply_num=0):
-    move_num = pgn_node.parent.board().fullmove_number
-    ply_num = pgn_node.parent.board().ply()
-
+def make_san_node_str(node):
     # assuming it's white's turn
-    turn_str = str(move_num) + '.'
+    turn_str = str(node.parent.board().fullmove_number) + '.'
     # if it's black's turn
-    if not pgn_node.parent.board().turn:
+    if not node.parent.board().turn:
         turn_str += '..'
-    turn_str += ' '
-    str_out = turn_str + pgn_node.san() + make_brief_comment_str(pgn_node.comment)
-
-    spaces = (ply_num-(init_ply_num+1)) * '  '
-    end_str = ""
-    if pgn_node.is_end():
-        end_str = " *"
-    print(spaces + str_out + end_str)
+    str_out = turn_str + ' ' +node.san() + make_brief_comment_str(node.comment)
     return str_out
 
-# Reports - not used or tested much
-def get_numbered_moves(pgn_node):
-    moves = pgn_node2moves(pgn_node)
+#############################
+# Reports
+#############################
+
+def get_numbered_moves(node):
+    moves = node2moves(node)
     # add the numbers to all of white's moves
     for p in range(0, len(moves), 2):
-        san = moves[p]
-        moves[p] = str(p // 2 + 1) + '. ' + san
+        moves[p] = str(p // 2 + 1) + '. ' + moves[p]
     return moves
 
-def print_listing_vertical(pgn_node):
-    moves = get_numbered_moves(pgn_node)
-    num_moves = len(moves)
-    # !!!range
-    for p in range(0, num_moves):
+def print_listing_vertical(node):
+    moves = get_numbered_moves(node)
+    listing = ''
+    for p, move in enumerate(moves):
         # if it's white's move, make the 1st half of the line.
         if p % 2 == 0:
-            tmpstr = moves[p]
+            tmpstr = move
             # if it's the last move, then there is no black bit to append. so print it now
-            if p == num_moves - 1:
-                print(tmpstr)
+            if p == len(moves) - 1:
+                listing += tmpstr
         # if it's black's move, make the 2nd half of the line and print it.
         else:
-            tmpstr += '\t' + moves[p]
-            print(tmpstr)
+            tmpstr += '\t' + move
+            if p != len(moves) - 1:
+                tmpstr += '\n'
+            listing += tmpstr
+    return listing
 
-def print_listing_horizontal(pgn_node):
-    moves = get_numbered_moves(pgn_node)
-    num_moves = len(moves)
-    tmpstr = ''
-    # !!!range
-    for p in range(0, num_moves):
-        tmpstr += moves[p]
-        if p != num_moves - 1:
-            tmpstr += ' '
-    print(tmpstr)
-    return tmpstr
+def print_listing_horizontal(node):
+    moves = get_numbered_moves(node)
+    listing = ''
+    for p, move in enumerate(moves):
+        listing += move
+        if p != len(moves) - 1:
+            listing += ' '
+    return listing
 
-def print_pgn_node_hybrid(pgn_node):
-    print_listing_horizontal(pgn_node)
-    print_pgn_node_recur(pgn_node, True)
+def print_node_tree(node):
+    buffer = io.StringIO()
+    print_node_tree_recur(node, buffer, initial=True)
+    return(buffer.getvalue())
 
-def print_pgn_node_recur(pgn_node, initial=False, ply_num=0):
-    # if pgn_node.parent is not None:
+def print_node_tree_recur(node, buffer, initial=False, init_ply_num=0):
     if initial:
-        if pgn_node.parent is not None:
-            ply_num = pgn_node.parent.board().ply()
+        if node.parent is not None:
+            init_ply_num = node.parent.board().ply()+1
     else:
-        make_san_node_str(pgn_node, init_ply_num=ply_num)
-    if not pgn_node.is_end():
-        # !!!range
-        for p in range(0, len(pgn_node.variations)):
-            print_pgn_node_recur(pgn_node.variations[p], ply_num=ply_num)
-
-# def report(state):
-#     # print('pgn:')
-#     # print(state.game_py)
-#     # print('tree:')
-#     # print_pgn_node_recur(state.game_py, True)
-#     # print('listing:')
-#     # print_listing_vertical(state.node_py)
-#     # print('horizontal listing:')
-#     # print_listing_horizontal(state.node_py)
-#     # print('hybrid horizontal tree:')
-#     # print_pgn_node_hybrid(state.node_py)
-#     pass
+        san_str = make_san_node_str(node)
+        ply_num = node.parent.board().ply()
+        spaces = (ply_num-init_ply_num) * '  '
+        # adds a * after if it's the last move
+        print(spaces + san_str + (" *" if node.is_end() else ''), file=buffer)
+    for variation in node.variations:
+        print_node_tree_recur(variation, buffer, init_ply_num=init_ply_num)
