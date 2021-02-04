@@ -79,30 +79,6 @@ class ChessTree(tk.Frame):
         for child in dict_node["children"]:
             self.tree_pgn_node_recur(child, parent)
 
-    # def make_tree(self, game, root_node_str, variations, tree_dict):
-    #     print(tree_dict)
-    #     # empty tree
-    #     children = self.tree.get_children('')
-    #     for child in children:
-    #         self.tree.delete(child)
-    #     # insert initial tree node, and pass it in as 2nd parameter
-    #     initial_node = self.tree.insert('', "end", text=root_node_str, open=True, tags='all')
-    #     self.tree_pgn_node_recur(game, initial_node, True)
-
-    #     self.tree.selection_set(self.get_root_node())
-    #     # self.tree.see(tree_node)
-    #     if len(variations) > 0:
-    #         self.update_tree_selection_2ndary(variations[0])
-
-    # def tree_pgn_node_recur(self, pgn_node, parent, initial=False):
-    #     # if pgn_node.parent is not None:
-    #     if not initial:
-    #         the_str = make_san_node_str(pgn_node)
-    #         parent = self.tree.insert(parent, "end", text=the_str, open=True, tags='all')
-    #     if not pgn_node.is_end():
-    #         for variation in pgn_node.variations:
-    #             self.tree_pgn_node_recur(variation, parent)
-
     # tree changes due to clicks or key presses allow actions on tree selection changes
     # otherwise not
     # prevents handle_tree_select from running unless it was a direct result of a click,
@@ -224,17 +200,13 @@ class ChessTree(tk.Frame):
 
     def get_node_with_move(self, tree_node, move):
         print('* get_node_with_move', move, len(self.tree.get_children(tree_node)))
+        # Should always find move, ie, should only call this if move exists.
         for child in self.tree.get_children(tree_node):
             tmptext = self.tree.item(child, 'text')
             tmptext_bits = tmptext.split(' ')
             tmptext = tmptext_bits[1]
             if tmptext == move:
-                # !!!why doesn't the return work here? 
                 return child
-                # break
-        print('*  get_node_with_move finished loop')
-        return child
-        # pass
 
     def update_tree(self, moves, next_move):
         # select the node of the current move by traversing through the moves.
@@ -253,14 +225,14 @@ class ChessTree(tk.Frame):
         self.update_tree_selection_2ndary(next_move)
 
     def update_tree_selection_2ndary(self, next_move):
-        if next_move == '':
-            return
         print("** update_tree_selection_2ndary", next_move)
         # untag the previous selection variation
         # premise is that there is at most one
         tagged_ids = self.tree.tag_has("sel_var")
         if len(tagged_ids) > 0:
             self.tree.item(tagged_ids[0], tags='all')
+        if next_move == '':
+            return
 
         # get the selected node of the tree
         selected_node = self.get_selected_node()

@@ -258,8 +258,8 @@ class App(object):
             tree_dict = json.loads(
                 chess_model_api_make_tree(json_state(self.state)))
 
-            self.update_display()
             self.make_tree_builtin(tree_dict)
+            self.update_display()
         # put the focus back on the tree so keyboard works.
         self.parent.lift()
         # self.ct.tree.focus_force()
