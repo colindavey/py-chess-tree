@@ -55,6 +55,7 @@ class App(object):
     def __init__(self, parent=None):
         # Create the chess model (cm)
         is_white = True
+        self.do_trace = True
         self.state = json.loads(chess_model_api_init())
         self.state, _ = chess_model_api_client('set_headers', self.state, is_white=is_white)
         tree_dict = json.loads(
@@ -269,7 +270,9 @@ class App(object):
 
     def update_display(self):
         self.bv.update_display(self.state["piece_distrib"])
+        self.do_trace = False
         self.c.update_display(self.state["has_parent"], self.state["variations"])
+        self.do_trace = True
         # make sure the appropriate tree node is selected based on the current move
         # and the appropriate variation of the move is secondary selected
         next_move = self.c.next_move_str.get()
@@ -298,10 +301,11 @@ class App(object):
     # this routine updates the tree.
     # we don't use the last three parameters
     def next_move_str_trace(self, a, b, c):
-        next_move = self.c.next_move_str.get()
-        # for built-in
-        print("*** from next_move_str_trace")
-        self.ct.update_tree_selection_2ndary(next_move)
+        if self.do_trace:
+            next_move = self.c.next_move_str.get()
+            # for built-in
+            print("*** from next_move_str_trace")
+            self.ct.update_tree_selection_2ndary(next_move)
 
     # for built-in
     def handle_tree_select_builtin(self, event):

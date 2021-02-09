@@ -207,6 +207,8 @@ class ChessTree(tk.Frame):
             tmptext = tmptext_bits[1]
             if tmptext == move:
                 return child
+        # print('  finished loop!!!!!!!!!!')
+        # return child
 
     def update_tree(self, moves, next_move):
         # select the node of the current move by traversing through the moves.
