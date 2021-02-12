@@ -53,14 +53,11 @@ def chess_model_api_client(operation, state_in, **kwargs):
 
 class App(object):
     def __init__(self, parent=None):
-        # Create the chess model (cm)
         is_white = True
-        self.do_trace = True
-        self.state = json.loads(chess_model_api_init())
-        self.state, _ = chess_model_api_client('set_headers', self.state, is_white=is_white)
-        tree_dict = json.loads(
-            chess_model_api_make_tree(json_state(self.state)))
 
+        #######################################
+        # Set up the TK space
+        #######################################
         self.title_str = 'python chess tree, Colin Davey v alpha'
         self.parent = parent
         self.parent.title(self.title_str)
@@ -77,16 +74,32 @@ class App(object):
         # self.left.pack(side=tk.LEFT, fill=BOTH, expand=True)
         self.left.pack(side=tk.LEFT)
 
+        # start of right frame for vertical listing
+        self.right = tk.Frame(self.top)
+        self.right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        self.right_top = tk.Frame(self.right)
+        self.right_top.pack(side=tk.TOP)
+        
+        self.right_top2 = tk.Frame(self.right)
+        self.right_top2.pack(side=tk.TOP)
+
+        self.bottom = tk.Frame(self.parent)
+        self.bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+
+        #######################################
         # Create the board view (bv)
+        #######################################
         self.bv = BoardView(self.left, is_white=is_white)
-
-        # Create the controls (c)
-        # self.c = Controls(self.parent)
-        self.c = Controls(self.left)
-
         # Configure board view
         # this binds the handle_click method to the view's canvas for left button down
         self.bv.canvas.bind("<Button-1>", self.handle_bv_click)
+
+        #######################################
+        # Create the controls (c)
+        #######################################
+        # self.c = Controls(self.parent)
+        self.c = Controls(self.left)
 
         # Configure controls
         self.c.backFullBtn.config(command=self.move_back_full)
@@ -105,12 +118,9 @@ class App(object):
         self.c.openBtn.config(command=self.open_all)
         self.c.closeBtn.config(command=self.close_all_but_current)
 
-        # start of right frame for vertical listing
-        self.right = tk.Frame(self.top)
-        self.right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-        self.right_top = tk.Frame(self.right)
-        self.right_top.pack(side=tk.TOP)
+        #######################################
+        # Create the right top widgents
+        #######################################
         self.loadBtn = tk.Button(self.right_top, text="Load")
         self.loadBtn.pack(side=tk.LEFT)
         self.saveBtn = tk.Button(self.right_top, text="Save")
@@ -118,9 +128,6 @@ class App(object):
 
         self.loadBtn.config(command=self.load_pgn)
         self.saveBtn.config(command=self.save_pgn)
-
-        self.right_top2 = tk.Frame(self.right)
-        self.right_top2.pack(side=tk.TOP)
 
         self.is_white = tk.IntVar()
         self.is_white.set(is_white)
@@ -130,23 +137,33 @@ class App(object):
         self.rb_b = tk.Radiobutton(self.right_top2, text="Black", variable=self.is_white, value=0, command=self.set_player)
         self.rb_b.pack(side=tk.LEFT)
 
+        #######################################
+        # Create the chess listing (cl)
+        #######################################
         # self.cl = tk.Label(self.right, text='Game listing will go here.', bg='#eee')
         # self.cl.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         self.cl = ChessListing(self.right)
         self.cl.table.bind("<Button-1>", self.handle_cl_click)
 
+        #######################################
         # Create the chess tree (ct)
-        self.bottom = tk.Frame(self.parent)
-        self.bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+        #######################################
         self.ct = ChessTree(self.bottom)
         self.ct.tree.bind("<<TreeviewSelect>>", self.handle_tree_select_builtin)
 
+        #######################################
+        # Create the chess model (cm)
+        #######################################
+        self.state = json.loads(chess_model_api_init())
+        self.state, _ = chess_model_api_client('set_headers', self.state, is_white=is_white)
+        tree_dict = json.loads(
+            chess_model_api_make_tree(json_state(self.state)))
         self.make_tree_builtin(tree_dict)
-        # initialize separate windows, which don't exist yet
 
+        # initialize separate comment editor window, which doesn't exist yet
         self.ce_root = None
-
         # initialize some variables
+        self.do_trace = True
         self.click1 = []
         self.legal_dests = []
 
