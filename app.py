@@ -326,42 +326,42 @@ class App(object):
         self.ce_root = None
 
     def handle_bv_click(self, click_coords):
-        # self.bv.update_display(self.state["piece_distrib"])
+        # This update_display is necessary for when clicking multiple valid click1 squares
+        self.bv.update_display(self.state["piece_distrib"])
         print('click:', click_coords["file"], click_coords["rank"])
 
         # If clicked on piece of side w turn, then it's click1.
         #   highlight the piece and all legal moves
-        valid_click, legal_dests = self.get_legal_dests_from(click_coords)
-        if valid_click:
+        if get_piece_color(self.state["piece_distrib"][click_coords["rank"]][click_coords["file"]]) == self.state["turn"]:
             self.click1 = click_coords
+            legal_dests, legal_dest_coords = self.get_legal_dests_from(click_coords)
             self.legal_dests = legal_dests
 
-            self.bv.draw_highlights(self.legal_dests)
+            self.bv.draw_highlights(legal_dest_coords)
             self.bv.draw_highlights([click_coords])
 
         else:
             # if we didn't just do the click1, and there is a click1 stored, then it might be the click2
             if self.click1 != []:
                 click2 = click_coords
-                for dest in self.legal_dests:
-                    if click2["file"] == dest["file"] and click2["rank"] == dest["rank"]:
-                        self.move(self.click1, click2)
-                        break
+                click2_str = file_rank2square_name(click2["file"], click2["rank"])
+                print(click2_str, self.legal_dests)
+                if click2_str in self.legal_dests:
+                    self.move(self.click1, click2)
 
             # reset
             self.click1 = []
             self.legal_dests = []
 
     def get_legal_dests_from(self, board_coords):
-        if get_piece_color(self.state["piece_distrib"][board_coords["rank"]][board_coords["file"]]) != self.state["turn"]:
-            return False, []
         start_coord = file_rank2square_name(board_coords["file"], board_coords["rank"])
         legal_moves = list(filter(lambda m : m[0:2] == start_coord, self.state["legal_moves"]))
-        # maps e.g. ["e2e3", "e2e4"] to ["e3", "e4"] to [{f : 4, r : 2}, {f : 4, r : 3}]
-        dest_list = list(map(
-            lambda m : square_name2file_rank(m[2:]),
-            legal_moves))
-        return True, dest_list
+
+        # e.g. maps ["e2e3", "e2e4"] to ["e3", "e4"] 
+        legal_dests = list(map(lambda m : m[2:], legal_moves))
+        # e.g. maps ["e3", "e4"]  to [{f : 4, r : 2}, {f : 4, r : 3}]
+        legal_dest_coords = list(map(lambda m : square_name2file_rank(m), legal_dests))
+        return legal_dests, legal_dest_coords
 
     def remove_var(self):
         self.diddle_var('remove')
