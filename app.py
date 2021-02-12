@@ -160,12 +160,12 @@ class App(object):
             chess_model_api_make_tree(json_state(self.state)))
         self.make_tree_builtin(tree_dict)
 
-        # initialize separate comment editor window, which doesn't exist yet
-        self.ce_root = None
         # initialize some variables
         self.do_trace = True
         self.click1 = []
         self.legal_dests = []
+        # initialize separate comment editor window, which doesn't exist yet
+        self.ce_root = None
 
     def set_player(self):
         # self.is_white is a control variable attached to the White/Black radio buttons
