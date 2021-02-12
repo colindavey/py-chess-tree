@@ -8,7 +8,7 @@ import tkinter.ttk as tktree
 # import wckToolTips
 
 class ChessTree(tk.Frame):
-    def __init__(self, parent=None, do_grid=False):
+    def __init__(self, parent, move_to_tree_node_cb):
         tk.Frame.__init__(self, parent)
 
         # For built-in, Grid doesn't work, Pack does.
@@ -17,9 +17,9 @@ class ChessTree(tk.Frame):
         #   Pack fails on Tree button with
         # "'App' object has no attribute 'pack'"
         ####################
-        if do_grid:
-            tk.Grid.columnconfigure(parent, 0, weight=1)
-            tk.Grid.rowconfigure(parent, 0, weight=1)
+        # if do_grid:
+        #     tk.Grid.columnconfigure(parent, 0, weight=1)
+        #     tk.Grid.rowconfigure(parent, 0, weight=1)
         ####################
         self.tree = tktree.Treeview(parent, show='tree')
         xsb = tktree.Scrollbar(parent, orient='horizontal', command=self.tree.xview)
@@ -28,19 +28,23 @@ class ChessTree(tk.Frame):
         self.tree.configure(xscroll=xsb.set)
         self.tree.configure(yscroll=ysb.set)
         ####################
-        if do_grid:
-            # This line needed to get horizontal scrollbar to sort of work
-            # self.tree.pack(expand=1, fill=BOTH)
-            # self.tree.grid(expand=1, fill=BOTH)
+        # if do_grid:
+        #     # This line needed to get horizontal scrollbar to sort of work
+        #     # self.tree.pack(expand=1, fill=BOTH)
+        #     # self.tree.grid(expand=1, fill=BOTH)
 
-            self.tree.grid(row=0, column=0, sticky=tk.W+tk.E+tk.N+tk.S)
-            xsb.grid(row=1, column=0, sticky='ew')
-            ysb.grid(row=0, column=1, sticky='ns')
-        else:
-            xsb.pack(side=tk.BOTTOM, fill=tk.X)
-            ysb.pack(side=tk.RIGHT, fill=tk.Y)
-            self.tree.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
-            self.pack()
+        #     self.tree.grid(row=0, column=0, sticky=tk.W+tk.E+tk.N+tk.S)
+        #     xsb.grid(row=1, column=0, sticky='ew')
+        #     ysb.grid(row=0, column=1, sticky='ns')
+        # else:
+        #     xsb.pack(side=tk.BOTTOM, fill=tk.X)
+        #     ysb.pack(side=tk.RIGHT, fill=tk.Y)
+        #     self.tree.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+        #     self.pack()
+        xsb.pack(side=tk.BOTTOM, fill=tk.X)
+        ysb.pack(side=tk.RIGHT, fill=tk.Y)
+        self.tree.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+        self.pack()
         ####################
 
         # any tree node with tag sel_var will now automatically turn light gray
@@ -58,6 +62,9 @@ class ChessTree(tk.Frame):
         self.tree.bind("<Key>", self.handle_tree_click)
         self.tree_clicked = False
         # self.tree.configure(takefocus=1)
+        
+        self.move_to_tree_node_cb = move_to_tree_node_cb
+        self.tree.bind("<<TreeviewSelect>>", self.handle_tree_select)
 
     def make_tree(self, variations, tree_dict):
         # print(tree_dict)
@@ -86,17 +93,21 @@ class ChessTree(tk.Frame):
     def handle_tree_click(self, event):
         self.tree_clicked = True
 
+    def handle_tree_select(self, event):
+        self.move_to_tree_node_cb(self.get_tree_moves())
+
     def update_tree_node(self, str, tree_node):
         selected_node = tree_node
         self.tree.item(selected_node, text=str)
 
-    def handle_tree_select(self):
+    def handle_tree_selected(self):
         if self.tree_clicked:
             self.tree_clicked = False
             return True
         else:
             return False
 
+    # get the moves from the beginning of the game to the selected tree node
     def get_tree_moves(self):
         moves = []
         # selitems = self.tree.selection()

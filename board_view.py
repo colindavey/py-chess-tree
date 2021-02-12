@@ -59,7 +59,7 @@ TILES = {"black_tile": "black_tile.gif",
 
 
 class BoardView(tk.Frame):
-    def __init__(self, parent=None, is_white=True):
+    def __init__(self, parent, handle_bv_click_cb, is_white=True):
         tk.Frame.__init__(self, parent)
         self.canvas = tk.Canvas(self, width=BOARD_WIDTH, height=BOARD_HEIGHT)
         self.canvas.pack()
@@ -78,6 +78,12 @@ class BoardView(tk.Frame):
             # this means we can directly translate a board entry from the model into a picture
         self.pack()
         self.is_white = is_white
+
+        self.handle_bv_click_cb = handle_bv_click_cb
+        self.canvas.bind("<Button-1>", self.handle_click)
+
+    def handle_click(self, event):
+        self.handle_bv_click_cb(self.get_click_location(event))
 
     def set_player(self, is_white):
         self.is_white = is_white

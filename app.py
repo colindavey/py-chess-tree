@@ -90,10 +90,7 @@ class App(object):
         #######################################
         # Create the board view (bv)
         #######################################
-        self.bv = BoardView(self.left, is_white=is_white)
-        # Configure board view
-        # this binds the handle_click method to the view's canvas for left button down
-        self.bv.canvas.bind("<Button-1>", self.handle_bv_click)
+        self.bv = BoardView(self.left, self.handle_bv_click, is_white=is_white)
 
         #######################################
         # Create the controls (c)
@@ -142,14 +139,12 @@ class App(object):
         #######################################
         # self.cl = tk.Label(self.right, text='Game listing will go here.', bg='#eee')
         # self.cl.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        self.cl = ChessListing(self.right)
-        self.cl.table.bind("<Button-1>", self.handle_cl_click)
+        self.cl = ChessListing(self.right, self.move_to_cl)
 
         #######################################
         # Create the chess tree (ct)
         #######################################
-        self.ct = ChessTree(self.bottom)
-        self.ct.tree.bind("<<TreeviewSelect>>", self.handle_tree_select_builtin)
+        self.ct = ChessTree(self.bottom, self.move_to_tree_node)
 
         #######################################
         # Create the chess model (cm)
@@ -176,13 +171,10 @@ class App(object):
 
         self.ct.update_tree_node(self.state["root_node_str"], self.ct.get_root_node())
 
-    def handle_cl_click(self, event):
-        moves = self.cl.handle_click(event)
-        print(moves)
-        if len(moves) > 0:
-            self.state, _ = chess_model_api_client('move_to', self.state, moves=moves)
-            self.update_display()
-            self.close_all_but_current()
+    def move_to_cl(self, moves):
+        self.state, _ = chess_model_api_client('move_to', self.state, moves=moves)
+        self.update_display()
+        self.close_all_but_current()
 
     ##############################
     # change board state
@@ -208,11 +200,9 @@ class App(object):
     # moves
 
     # from tree click
-    def move_to_tree_node(self):
-        if self.ct.handle_tree_select():
+    def move_to_tree_node(self, moves):
+        if self.ct.handle_tree_selected():
             if self.check_comment():
-                # get the moves from the beginning of the game to the selected tree node
-                moves = self.ct.get_tree_moves()
                 self.state, _ = chess_model_api_client('move_to', self.state, moves=moves)
                 self.update_display()
 
@@ -324,10 +314,6 @@ class App(object):
             print("*** from next_move_str_trace")
             self.ct.update_tree_selection_2ndary(next_move)
 
-    # for built-in
-    def handle_tree_select_builtin(self, event):
-        self.move_to_tree_node()
-
     # change the tree to reflect a change in the chess model
     def diddle_var_tree(self, diddle):
         # for built-in
@@ -339,26 +325,24 @@ class App(object):
         self.ce_root.destroy()
         self.ce_root = None
 
-    def handle_bv_click(self, event):
-        self.bv.update_display(self.state["piece_distrib"])
-
-        click_location = self.bv.get_click_location(event)
-        print('click:', click_location["file"], click_location["rank"])
+    def handle_bv_click(self, click_coords):
+        # self.bv.update_display(self.state["piece_distrib"])
+        print('click:', click_coords["file"], click_coords["rank"])
 
         # If clicked on piece of side w turn, then it's click1.
         #   highlight the piece and all legal moves
-        valid_click, legal_dests = self.get_legal_dests_from(click_location)
+        valid_click, legal_dests = self.get_legal_dests_from(click_coords)
         if valid_click:
-            self.click1 = click_location
+            self.click1 = click_coords
             self.legal_dests = legal_dests
 
             self.bv.draw_highlights(self.legal_dests)
-            self.bv.draw_highlights([click_location])
+            self.bv.draw_highlights([click_coords])
 
         else:
             # if we didn't just do the click1, and there is a click1 stored, then it might be the click2
             if self.click1 != []:
-                click2 = click_location
+                click2 = click_coords
                 for dest in self.legal_dests:
                     if click2["file"] == dest["file"] and click2["rank"] == dest["rank"]:
                         self.move(self.click1, click2)

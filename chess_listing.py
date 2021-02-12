@@ -3,7 +3,7 @@ import tkinter as tk
 import tkinter.ttk as tktree
 
 class ChessListing(tk.Frame):
-    def __init__(self, parent=None, do_grid=False):
+    def __init__(self, parent, move_to_cb):
         tk.Frame.__init__(self, parent)
         self.table = tktree.Treeview(parent)
         ysb = tktree.Scrollbar(parent, orient='vertical', command=self.table.yview)
@@ -20,6 +20,9 @@ class ChessListing(tk.Frame):
         self.table.heading('b', text='B')
         self.table.column('b', anchor='center', width=12)
         self.table.configure(selectmode='none')
+
+        self.move_to_cb = move_to_cb
+        self.table.bind("<Button-1>", self.handle_click)
 
     def update_listing(self, moves):
         children = self.table.get_children('')
@@ -65,4 +68,6 @@ class ChessListing(tk.Frame):
                         if col == '#2': # and values[1] != '':
                             moves.append(values[1])
                         break
-        return moves
+        if len(moves) > 0:
+            self.move_to_cb(moves)
+       
