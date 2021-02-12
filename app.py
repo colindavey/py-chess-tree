@@ -15,8 +15,8 @@ from chess_model_api_server import chess_model_api
 from chess_model_api_server import chess_model_api_init
 from chess_model_api_server import chess_model_api_make_tree
 
-from file_rank_square import file_rank2square_name
-from file_rank_square import square_name2file_rank
+from file_rank_square import board_coords2square_name
+from file_rank_square import square_name2board_coords
 
 #####################################
 # Utility Functions - used by App only
@@ -344,7 +344,7 @@ class App(object):
             # if we didn't just do the click1, and there is a click1 stored, then it might be the click2
             if self.click1 != []:
                 click2 = click_coords
-                click2_str = file_rank2square_name(click2["file"], click2["rank"])
+                click2_str = board_coords2square_name(click2)
                 print(click2_str, self.legal_dests)
                 if click2_str in self.legal_dests:
                     self.move(self.click1, click2)
@@ -354,13 +354,13 @@ class App(object):
             self.legal_dests = []
 
     def get_legal_dests_from(self, board_coords):
-        start_coord = file_rank2square_name(board_coords["file"], board_coords["rank"])
+        start_coord = board_coords2square_name(board_coords)
         legal_moves = list(filter(lambda m : m[0:2] == start_coord, self.state["legal_moves"]))
 
         # e.g. maps ["e2e3", "e2e4"] to ["e3", "e4"] 
         legal_dests = list(map(lambda m : m[2:], legal_moves))
         # e.g. maps ["e3", "e4"]  to [{f : 4, r : 2}, {f : 4, r : 3}]
-        legal_dest_coords = list(map(lambda m : square_name2file_rank(m), legal_dests))
+        legal_dest_coords = list(map(lambda m : square_name2board_coords(m), legal_dests))
         return legal_dests, legal_dest_coords
 
     def remove_var(self):

@@ -5,7 +5,7 @@ import chess
 from chess import pgn
 import io
 
-from file_rank_square import file_rank2square_name
+from file_rank_square import board_coords2square_name
 
 def chess_model_api_init():
     game = chess.pgn.Game()
@@ -51,7 +51,7 @@ def chess_model_api(operation, state_in, inputs={}):
     elif operation == 'move_add':
         start = inputs['start']
         destination = inputs['destination']
-        uci = file_rank2square_name(start["file"], start["rank"]) + file_rank2square_name(destination["file"], destination["rank"])
+        uci = board_coords2square_name(start) + board_coords2square_name(destination)
         san = calc_san(node, start, destination)
         if node.has_variation(chess.Move.from_uci(uci)):
             added = False
@@ -166,7 +166,7 @@ def calc_game_node(state):
     # return state["game_py"], state["node_py"]
 
 def calc_san(node, start, destination):
-    uci = file_rank2square_name(start["file"], start["rank"]) + file_rank2square_name(destination["file"], destination["rank"])
+    uci = board_coords2square_name(start) + board_coords2square_name(destination)
     return node.board().san(chess.Move.from_uci(uci))
 
 def get_var_from_san(node, san):
