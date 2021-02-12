@@ -355,8 +355,8 @@ class App(object):
 
     def get_legal_dests_from(self, board_coords):
         start_coord = board_coords2square_name(board_coords)
+        # filter the legal moves down to those starting from the start_coord
         legal_moves = list(filter(lambda m : m[0:2] == start_coord, self.state["legal_moves"]))
-
         # e.g. maps ["e2e3", "e2e4"] to ["e3", "e4"] 
         legal_dests = list(map(lambda m : m[2:], legal_moves))
         # e.g. maps ["e3", "e4"]  to [{f : 4, r : 2}, {f : 4, r : 3}]
