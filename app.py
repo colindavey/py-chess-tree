@@ -142,14 +142,13 @@ class App(object):
         self.state, _ = chess_model_api_client('set_headers', self.state, is_white=is_white)
         tree_dict = json.loads(
             chess_model_api_make_tree(json_state(self.state)))
-        self.make_tree_builtin(tree_dict)
+        self.make_tree(tree_dict)
 
         # initialize some variables
         self.do_trace = True
-        # self.click1 = []
-        # self.legal_dests = []
         # initialize separate comment editor window, which doesn't exist yet
         self.ce_root = None
+        self.ce_tree_node = None
 
     def set_player(self):
         # self.is_white is a control variable attached to the White/Black radio buttons
@@ -175,7 +174,7 @@ class App(object):
         self.state, _ = chess_model_api_client('set_comment', self.state, comment=comment)
         self.ce.save_button.configure(state=tk.DISABLED)
         self.ce.editor.edit_modified(False)
-        self.ct.update_tree_node(self.state["node_str"], self.ce.tree_node)
+        self.ct.update_tree_node(self.state["node_str"], self.ce_tree_node)
 
     def diddle_var(self, diddle):
         san = self.c.next_move_str.get()
@@ -255,7 +254,7 @@ class App(object):
             tree_dict = json.loads(
                 chess_model_api_make_tree(json_state(self.state)))
 
-            self.make_tree_builtin(tree_dict)
+            self.make_tree(tree_dict)
             self.update_display()
         # put the focus back on the tree so keyboard works.
         self.parent.lift()
@@ -286,9 +285,9 @@ class App(object):
             self.ce.editor.edit_modified(False)
             # this is only necessary in case the user makes the next node by clicking on the tree.
             # otherwise, we could just use the selected node at that time.
-            self.ce.tree_node = self.ct.get_selected_node()
+            self.ce_tree_node = self.ct.get_selected_node()
 
-    def make_tree_builtin(self, tree_dict):
+    def make_tree(self, tree_dict):
         # new tree for built-in
         self.ct.make_tree(self.state["variations"], tree_dict)
         self.ct.horz_scrollbar_magic()
