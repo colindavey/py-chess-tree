@@ -159,23 +159,9 @@ class App(object):
 
         self.ct.update_tree_node(self.state["root_node_str"], self.ct.get_root_node())
 
-    def move_to_cl(self, moves):
-        self.state, _ = chess_model_api_client('move_to', self.state, moves=moves)
-        self.update_display()
-        self.close_all_but_current()
-
     ##############################
     # change board state
     ##############################
-    def save_comment(self):
-        comment = self.ce.editor.get(1.0, tk.END)
-        comment = comment[0:-1]
-        print('comment:', comment)
-        self.state, _ = chess_model_api_client('set_comment', self.state, comment=comment)
-        self.ce.save_button.configure(state=tk.DISABLED)
-        self.ce.editor.edit_modified(False)
-        self.ct.update_tree_node(self.state["node_str"], self.ce_tree_node)
-
     def diddle_var(self, diddle):
         san = self.c.next_move_str.get()
         self.state, _ = chess_model_api_client('diddle_var', self.state, diddle=diddle, san=san)
@@ -187,12 +173,32 @@ class App(object):
 
     # moves
 
+    # from listing click
+    def move_to_cl(self, moves):
+        if self.check_comment():
+            self.state, _ = chess_model_api_client('move_to', self.state, moves=moves)
+            self.update_display()
+            self.close_all_but_current()
+
     # from tree click
     def move_to_tree_node(self, moves):
-        if self.ct.handle_tree_selected():
-            if self.check_comment():
-                self.state, _ = chess_model_api_client('move_to', self.state, moves=moves)
-                self.update_display()
+        if self.check_comment():
+            self.state, _ = chess_model_api_client('move_to', self.state, moves=moves)
+            self.update_display()
+
+    # from board click
+    def move(self, click1, click2):
+        if self.check_comment():
+            self.state, outputs = chess_model_api_client('move_add', self.state, start=click1, destination=click2)
+            added = outputs['added']
+            san = outputs['san']
+            move_str = outputs['move_str']
+            if added:
+                # update the tree
+                self.ct.add_node_to_tree(move_str)
+                # update the option menu? not necessary, since we're about to leave
+            self.state, _ = chess_model_api_client('move_frwd', self.state, san=san)
+            self.update_display()
 
     # from buttons
     def move_back_full(self):
@@ -206,20 +212,6 @@ class App(object):
             self.state, _ = chess_model_api_client('move_back', self.state)
             self.update_display()
             self.close_all_but_current()
-
-    # from board click
-    def move(self, click1, click2):
-        if self.check_comment():
-            self.state, outputs = chess_model_api_client('move_add', self.state, start=click1, destination=click2)
-            added = outputs['added']
-            san = outputs['san']
-            move_str = outputs['move_str']
-            if added:
-                # update the tree
-                self.ct.add_move_to_tree(move_str)
-                # update the option menu? not necessary, since we're about to leave
-            self.state, _ = chess_model_api_client('move_frwd', self.state, san=san)
-            self.update_display()
 
     def move_frwd(self):
         if self.check_comment():
@@ -277,16 +269,6 @@ class App(object):
         self.update_ce()
         self.ct.horz_scrollbar_magic()
 
-    def update_ce(self):
-        if self.ce_root is not None:
-            comment = self.state["comment"]
-            self.ce.editor.replace(1.0, tk.END, comment)
-            self.ce.save_button.configure(state=tk.DISABLED)
-            self.ce.editor.edit_modified(False)
-            # this is only necessary in case the user makes the next node by clicking on the tree.
-            # otherwise, we could just use the selected node at that time.
-            self.ce_tree_node = self.ct.get_selected_node()
-
     def make_tree(self, tree_dict):
         # new tree for built-in
         self.ct.make_tree(self.state["variations"], tree_dict)
@@ -309,10 +291,6 @@ class App(object):
         next_move_str = self.c.next_move_str.get()
         self.c.next_move_str.set(next_move_str)
 
-    def on_closing_comment_editor(self):
-        self.ce_root.destroy()
-        self.ce_root = None
-
     def remove_var(self):
         self.diddle_var('remove')
         self.c.update_display(self.state["has_parent"], self.state["variations"])
@@ -325,18 +303,6 @@ class App(object):
 
     def demote_var(self):
         self.diddle_var('demote')
-
-    def check_comment(self):
-        ret_val = True
-        if self.ce_root is not None:
-            print('edited ', self.ce.editor.edit_modified())
-            if self.ce.editor.edit_modified():
-                resp = messagebox.askyesnocancel('Save comment?', 'The comment has been edited. Save?')
-                if resp is None:
-                    ret_val = False
-                elif resp is True:
-                    self.save_comment()
-        return ret_val
 
     def save_pgn(self):
         # get filename
@@ -352,11 +318,18 @@ class App(object):
     def close_all_but_current(self):
         self.ct.open_all(False)
 
-    # close the comment window when closing main window
-    def on_closing(self):
+    #################################
+    # Comment editing
+    #################################
+    def update_ce(self):
         if self.ce_root is not None:
-            self.ce_root.destroy()
-        self.parent.destroy()
+            comment = self.state["comment"]
+            self.ce.editor.replace(1.0, tk.END, comment)
+            self.ce.save_button.configure(state=tk.DISABLED)
+            self.ce.editor.edit_modified(False)
+            # this is only necessary in case the user makes the next node by clicking on the tree.
+            # otherwise, we could just use the selected node at that time.
+            self.ce_tree_node = self.ct.get_selected_node()
 
     def handle_comment_button(self):
         if self.ce_root is None:
@@ -387,6 +360,40 @@ class App(object):
         # low level tk stuff
         self.ce_root.lift()
         self.ce_root.update()
+
+    def check_comment(self):
+        ret_val = True
+        if self.ce_root is not None:
+            print('edited ', self.ce.editor.edit_modified())
+            if self.ce.editor.edit_modified():
+                resp = messagebox.askyesnocancel('Save comment?', 'The comment has been edited. Save?')
+                if resp is None:
+                    ret_val = False
+                elif resp is True:
+                    self.save_comment()
+        return ret_val
+
+    def save_comment(self):
+        comment = self.ce.editor.get(1.0, tk.END)
+        comment = comment[0:-1]
+        print('comment:', comment)
+        self.state, _ = chess_model_api_client('set_comment', self.state, comment=comment)
+        self.ce.save_button.configure(state=tk.DISABLED)
+        self.ce.editor.edit_modified(False)
+        self.ct.update_tree_node(self.state["node_str"], self.ce_tree_node)
+
+    def on_closing_comment_editor(self):
+        self.ce_root.destroy()
+        self.ce_root = None
+
+    #################################
+    # Starting and stopping
+    #################################
+    # close the comment window when closing main window
+    def on_closing(self):
+        if self.ce_root is not None:
+            self.ce_root.destroy()
+        self.parent.destroy()
 
     def run(self):
         self.update_display()

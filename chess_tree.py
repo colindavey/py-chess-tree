@@ -60,14 +60,24 @@ class ChessTree(tk.Frame):
         # otherwise no
         self.tree.bind("<Button-1>", self.handle_tree_click)
         self.tree.bind("<Key>", self.handle_tree_click)
+        self.tree.bind("<<TreeviewSelect>>", self.handle_node_select)
         self.tree_clicked = False
-        # self.tree.configure(takefocus=1)
-        
+        # self.tree.configure(takefocus=1)        
         self.move_to_tree_node_cb = move_to_tree_node_cb
-        self.tree.bind("<<TreeviewSelect>>", self.handle_tree_select)
+
+    # tree changes due to clicks or key presses allow actions on tree selection changes
+    # otherwise not
+    # prevents handle_node_select from running unless it was a direct result of a click,
+    # or key press as opposed to programatically
+    def handle_tree_click(self, event):
+        self.tree_clicked = True
+
+    def handle_node_select(self, event):
+        if self.tree_clicked:
+            self.move_to_tree_node_cb(self.get_tree_moves())
+            self.tree_clicked = False
 
     def make_tree(self, variations, tree_dict):
-        # print(tree_dict)
         # empty tree
         children = self.tree.get_children('')
         for child in children:
@@ -85,27 +95,6 @@ class ChessTree(tk.Frame):
         parent = self.tree.insert(parent, "end", text=dict_node["label"], open=True, tags='all')
         for child in dict_node["children"]:
             self.tree_pgn_node_recur(child, parent)
-
-    # tree changes due to clicks or key presses allow actions on tree selection changes
-    # otherwise not
-    # prevents handle_tree_select from running unless it was a direct result of a click,
-    # or key press as opposed to programatically
-    def handle_tree_click(self, event):
-        self.tree_clicked = True
-
-    def handle_tree_select(self, event):
-        self.move_to_tree_node_cb(self.get_tree_moves())
-
-    def update_tree_node(self, str, tree_node):
-        selected_node = tree_node
-        self.tree.item(selected_node, text=str)
-
-    def handle_tree_selected(self):
-        if self.tree_clicked:
-            self.tree_clicked = False
-            return True
-        else:
-            return False
 
     # get the moves from the beginning of the game to the selected tree node
     def get_tree_moves(self):
@@ -209,6 +198,10 @@ class ChessTree(tk.Frame):
             # self.tree.column('#0', minwidth=1000)
             # self.tree.column('#0', minwidth=520)
 
+    def update_tree_node(self, str, tree_node):
+        selected_node = tree_node
+        self.tree.item(selected_node, text=str)
+
     def get_node_with_move(self, tree_node, move):
         print('* get_node_with_move', move, len(self.tree.get_children(tree_node)))
         # Should always find move, ie, should only call this if move exists.
@@ -277,7 +270,7 @@ class ChessTree(tk.Frame):
                 new_index = index + 1
             self.tree.move(sel_secondary_item, selected_node, new_index)
 
-    def add_move_to_tree(self, san_str):
+    def add_node_to_tree(self, san_str):
         # get the selected node of the tree
         selected_node = self.get_selected_node()
         # add the current move at the end of the selected node's children
