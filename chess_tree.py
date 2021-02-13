@@ -117,9 +117,7 @@ class ChessTree(tk.Frame):
         # and the amount it increases for each level depth
         items = self.tree.tag_has('all')
         max_w = 0
-        # !!!range
-        for q in range(0, len(items)):
-            item = items[q]
+        for item in items:
             tmptxt = self.tree.item(item, 'text')
             tw = self.font.measure(tmptxt)
             x = 2
@@ -164,22 +162,21 @@ class ChessTree(tk.Frame):
             w = 0
             # if bbox != '':
             #     max_w = bbox[2]
-            # !!!range
-            for q in range(0, len(items)):
-                bbox = self.tree.bbox(items[q], column='#0')
+            for item in items:
+                bbox = self.tree.bbox(item, column='#0')
                 if bbox != '':
                     # the x value
                     x = bbox[0]
                     # # temporary kludge
                     # num_levels = (x - 2)//20
                     # x = ((num_levels + 4) * 20) + 2
-                    tmptxt = self.tree.item(items[q], 'text')
+                    tmptxt = self.tree.item(item, 'text')
                     tw = self.font.measure(tmptxt)
                     # twa = self.font_actual.measure(tmptxt)
                     w = x + tw
                     # if bbox[0] + bbox[2] > w:
                     #     w = bbox[0] + bbox[2]
-                    #     print('override!!!')
+                    #     print('***override')
                     if w > max_w:
                         max_w = w
                     # print(x, tw, twa, w, max_w, tmptxt)
@@ -211,20 +208,18 @@ class ChessTree(tk.Frame):
             tmptext = tmptext_bits[1]
             if tmptext == move:
                 return child
-        # print('  finished loop!!!!!!!!!!')
+        # print('  *** finished loop')
         # return child
 
     def update_tree(self, moves, next_move):
         # select the node of the current move by traversing through the moves.
         # the premise is that all the moves are in the tree
         tree_node = self.get_root_node()
-        # !!!range
-        for p in range(0, len(moves)):
-            tmp_next_move = moves[p]
-            childrenIDs = self.tree.get_children(tree_node)
+        for move in moves:
             # should always pass this if, since the premise is that all moves are in the tree
-            if len(childrenIDs) > 0:
-                tree_node = self.get_node_with_move(tree_node, tmp_next_move)
+            if len(self.tree.get_children(tree_node)) > 0:
+                tree_node = self.get_node_with_move(tree_node, move)
+
         self.tree.selection_set(tree_node)
         # self.tree.see(tree_node)
         print("*** from update_tree")
@@ -248,7 +243,6 @@ class ChessTree(tk.Frame):
         if len(childrenIDs) > 0:
             tree_node = self.get_node_with_move(selected_node, next_move)
             self.tree.item(tree_node, tags=['sel_var', 'all'])
-            # self.tree.see(childrenIDs[q])
 
     def diddle_var_tree(self, diddle):
         sel_secondary_items = self.tree.tag_has("sel_var")
@@ -278,9 +272,8 @@ class ChessTree(tk.Frame):
 
     def open_all(self, bool_in):
         items = self.tree.tag_has('all')
-        # !!!range
-        for q in range(0, len(items)):
-            self.tree.item(items[q], open=bool_in)
+        for item in items:
+            self.tree.item(item, open=bool_in)
         # if closing, make sure that it's at least open to the current move
         if not bool_in:
             node = self.get_selected_node()
