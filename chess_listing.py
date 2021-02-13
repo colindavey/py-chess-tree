@@ -38,34 +38,33 @@ class ChessListing(tk.Frame):
     def handle_click(self, event):
         # get the row and column clicked on. row and col aren't numbers
         # they are tree things, with rows like I00B and cols like #1
-        row = self.table.identify_row(event.y)
-        col = self.table.identify_column(event.x)
+        clickedRow = self.table.identify_row(event.y)
+        clickedCol = self.table.identify_column(event.x)
         moves = []
         # make sure we have clicked in an actual cell
         # if not clicked in the column with the numbers (e.g. '1.')
         # and haven't clicked outside of the actual rows
-        if col != '#0' and row != '':
+        if clickedCol != '#0' and clickedRow != '':
             # get the text from the cell clicked on
-            values = self.table.item(row, 'values')
+            values = self.table.item(clickedRow, 'values')
             value = values[0]
-            if col == '#2':
+            if clickedCol == '#2':
                 value = values[1]
             # if the cell wasn't empty (the rightmost column of the last move with no move by black)
-            if value != '':
+            if value:
                 # get all the rows
-                items = self.table.get_children('')
+                rows = self.table.get_children('')
                 # go through all the rows building up the moves stop when we get to the clicked-on move
-                # !!!range
-                for p in range(0, len(items)):
-                    values = self.table.item(items[p], 'values')
+                for row in rows:
+                    values = self.table.item(row, 'values')
                     # add the first move of the row
                     moves.append(values[0])
                     # if we're not at the last row, then add the move
-                    if items[p] != row:
+                    if row != clickedRow:
                         moves.append(values[1])
                     else:
                         # break on the last row, adding black's move if that's what was clicked on
-                        if col == '#2': # and values[1] != '':
+                        if clickedCol == '#2': # and values[1] != '':
                             moves.append(values[1])
                         break
         if len(moves) > 0:
