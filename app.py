@@ -99,10 +99,11 @@ class App(object):
         self.c.demoteVarBtn.config(command=self.demote_var)
 
         self.c.commentBtn.config(command=self.handle_comment_button)
-        self.c.next_move_str.trace('w', self.next_move_str_trace)
 
         self.c.openBtn.config(command=self.open_all)
         self.c.closeBtn.config(command=self.close_all_but_current)
+
+        self.c.next_move_str.trace('w', self.next_move_str_trace)
 
         #######################################
         # Create the right top widgents
@@ -150,6 +151,51 @@ class App(object):
         self.ce_root = None
         self.ce_tree_node = None
 
+    #################################
+    # Starting stopping and saving
+    #################################
+    # close the comment window when closing main window
+    def on_closing(self):
+        if self.ce_root is not None:
+            self.ce_root.destroy()
+        self.parent.destroy()
+
+    def run(self):
+        self.update_display()
+        tk.mainloop()
+
+    def save_pgn(self):
+        # get filename
+        filename = tkfiledialog.asksaveasfilename(defaultextension='.pgn')
+        if filename != '':
+            f = open(filename, 'w')
+            print(self.state["pgn_str"], file=f)
+            f.close()
+
+    #################################
+    # updates display
+    #################################
+    def update_display(self):
+        self.bv.update(self.state["piece_distrib"], self.state["legal_moves"], self.state["turn"])
+        self.do_trace = False
+        self.c.update_display(self.state["has_parent"], self.state["variations"])
+        self.do_trace = True
+        # make sure the appropriate tree node is selected based on the current move
+        # and the appropriate variation of the move is secondary selected
+        next_move = self.c.next_move_str.get()
+        self.ct.update_tree(self.state["moves"], next_move)
+        self.cl.update_listing(self.state["moves"])
+        self.update_ce()
+        self.ct.horz_scrollbar_magic()
+
+    def make_tree(self, tree_dict):
+        self.ct.make_tree(self.state["variations"], tree_dict)
+        self.ct.horz_scrollbar_magic()
+
+    #################################
+    # Fits pattern
+    #   give user input, results in call to chess model and change to GUI
+    #################################
     def set_player(self):
         # self.is_white is a control variable attached to the White/Black radio buttons
         is_white = self.is_white.get()
@@ -165,7 +211,11 @@ class App(object):
     def diddle_var(self, diddle):
         san = self.c.next_move_str.get()
         self.state, _ = chess_model_api_client('diddle_var', self.state, diddle=diddle, san=san)
-        self.diddle_var_tree(diddle)
+
+        self.ct.diddle_var_tree(diddle)
+        next_move_str = self.c.next_move_str.get()
+        self.c.next_move_str.set(next_move_str)
+
         # self.c.update_display(self.state["has_parent"], self.state["variations"])
         if diddle == 'remove':
             san = ''
@@ -225,12 +275,6 @@ class App(object):
             self.update_display()
             self.close_all_but_current()
 
-    # END moves
-
-    ##############################
-    # END change board state
-    ##############################
-
     def load_pgn(self):
         # get filename
         filename = tkfiledialog.askopenfilename(filetypes=[('pgn files', '*.pgn')])
@@ -253,44 +297,18 @@ class App(object):
         # self.ct.tree.focus_force()
         self.ct.tree.focus_set()
 
-    # Doesn't directly address chess model below here
+    ##############################
+    # Candidates to put elsewhere
+    ##############################
 
-    def update_display(self):
-        self.bv.update(self.state["piece_distrib"], self.state["legal_moves"], self.state["turn"])
-        self.do_trace = False
-        self.c.update_display(self.state["has_parent"], self.state["variations"])
-        self.do_trace = True
-        # make sure the appropriate tree node is selected based on the current move
-        # and the appropriate variation of the move is secondary selected
-        next_move = self.c.next_move_str.get()
-        # for built-in
-        self.ct.update_tree(self.state["moves"], next_move)
-        self.cl.update_listing(self.state["moves"])
-        self.update_ce()
-        self.ct.horz_scrollbar_magic()
+    def open_all(self):
+        self.ct.open_all(True)
 
-    def make_tree(self, tree_dict):
-        # new tree for built-in
-        self.ct.make_tree(self.state["variations"], tree_dict)
-        self.ct.horz_scrollbar_magic()
+    def close_all_but_current(self):
+        self.ct.open_all(False)
 
-    # when the next move menu changes, next_move_str changes bringing control to here.
-    # this routine updates the tree.
-    # we don't use the last three parameters
-    def next_move_str_trace(self, a, b, c):
-        if self.do_trace:
-            next_move = self.c.next_move_str.get()
-            # for built-in
-            print("*** from next_move_str_trace")
-            self.ct.update_tree_selection_2ndary(next_move)
-
-    # change the tree to reflect a change in the chess model
-    def diddle_var_tree(self, diddle):
-        # for built-in
-        self.ct.diddle_var_tree(diddle)
-        next_move_str = self.c.next_move_str.get()
-        self.c.next_move_str.set(next_move_str)
-
+    # controls just needs to call diddle_var directly w diddle as parameter
+    # special line after remove_var can go with case already there for remove_var
     def remove_var(self):
         self.diddle_var('remove')
         self.c.update_display(self.state["has_parent"], self.state["variations"])
@@ -304,19 +322,14 @@ class App(object):
     def demote_var(self):
         self.diddle_var('demote')
 
-    def save_pgn(self):
-        # get filename
-        filename = tkfiledialog.asksaveasfilename(defaultextension='.pgn')
-        if filename != '':
-            f = open(filename, 'w')
-            print(self.state["pgn_str"], file=f)
-            f.close()
-
-    def open_all(self):
-        self.ct.open_all(True)
-
-    def close_all_but_current(self):
-        self.ct.open_all(False)
+    # when the next move menu changes, next_move_str changes bringing control to here.
+    # this routine updates the tree.
+    # we don't use the last three parameters
+    def next_move_str_trace(self, a, b, c):
+        if self.do_trace:
+            next_move = self.c.next_move_str.get()
+            print("*** from next_move_str_trace")
+            self.ct.update_tree_selection_2ndary(next_move)
 
     #################################
     # Comment editing
@@ -385,19 +398,6 @@ class App(object):
     def on_closing_comment_editor(self):
         self.ce_root.destroy()
         self.ce_root = None
-
-    #################################
-    # Starting and stopping
-    #################################
-    # close the comment window when closing main window
-    def on_closing(self):
-        if self.ce_root is not None:
-            self.ce_root.destroy()
-        self.parent.destroy()
-
-    def run(self):
-        self.update_display()
-        tk.mainloop()
 
 if __name__ == "__main__":
     the_parent = tk.Tk()

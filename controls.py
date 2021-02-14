@@ -6,11 +6,11 @@ class Controls(tk.Frame):
     def __init__(self, parent=None):
         tk.Frame.__init__(self, parent)
 
-        self.backFullBtn = tk.Button(self, text="|<")
-        self.backFullBtn.pack(side=tk.LEFT)
+        self.closeBtn = tk.Button(self, text="C")
+        self.closeBtn.pack(side=tk.LEFT)
 
-        self.backBtn = tk.Button(self, text="<")
-        self.backBtn.pack(side=tk.LEFT)
+        self.openBtn = tk.Button(self, text="O")
+        self.openBtn.pack(side=tk.LEFT)
 
         # next_move_str is a tk "control variable"
         # see http://effbot.org/tkinterbook/variable.htm
@@ -21,12 +21,6 @@ class Controls(tk.Frame):
         self.nextMoveOMen.config(width=0)
         # self.nextMoveOMen.pack(side=LEFT, fill=X, expand=True)
         self.nextMoveOMen.pack(side=tk.LEFT)
-
-        self.frwdBtn = tk.Button(self, text=">")
-        self.frwdBtn.pack(side=tk.LEFT)
-
-        self.frwdFullBtn = tk.Button(self, text=">|")
-        self.frwdFullBtn.pack(side=tk.LEFT)
 
         self.removeVarBtn = tk.Button(self, text="x")
         self.removeVarBtn.pack(side=tk.LEFT)
@@ -43,14 +37,20 @@ class Controls(tk.Frame):
         # self.treeBtn = tk.Button(self, text="Tree")
         # self.treeBtn.pack(side=tk.LEFT)
 
+        self.backFullBtn = tk.Button(self, text="|<")
+        self.backFullBtn.pack(side=tk.LEFT)
+
+        self.backBtn = tk.Button(self, text="<")
+        self.backBtn.pack(side=tk.LEFT)
+
+        self.frwdBtn = tk.Button(self, text=">")
+        self.frwdBtn.pack(side=tk.LEFT)
+
+        self.frwdFullBtn = tk.Button(self, text=">|")
+        self.frwdFullBtn.pack(side=tk.LEFT)
+
         self.commentBtn = tk.Button(self, text="{}")
         self.commentBtn.pack(side=tk.LEFT)
-
-        self.closeBtn = tk.Button(self, text="C")
-        self.closeBtn.pack(side=tk.LEFT)
-
-        self.openBtn = tk.Button(self, text="O")
-        self.openBtn.pack(side=tk.LEFT)
 
         self.pack()
 
