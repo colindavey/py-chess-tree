@@ -236,6 +236,8 @@ class App(object):
         # self.c.update_next_move_option_menu(self.state["variations"], san)
         # if diddle == 'remove':
         #     self.c.update_display(self.state["has_parent"], self.state["variations"])
+        if diddle == 'remove':
+            san = ''
         self.c.update_display(self.state["has_parent"], self.state["variations"], san)
 
     def load_pgn(self):
