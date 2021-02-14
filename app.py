@@ -177,6 +177,7 @@ class App(object):
     #################################
     def update_display(self):
         self.bv.update(self.state["piece_distrib"], self.state["legal_moves"], self.state["turn"])
+
         # self.do_trace = False
         self.c.update_display(self.state["has_parent"], self.state["variations"])
         # self.do_trace = True
@@ -184,9 +185,10 @@ class App(object):
         # and the appropriate variation of the move is secondary selected
         next_move = self.c.next_move_str.get()
         self.ct.update_tree(self.state["moves"], next_move)
+        self.ct.horz_scrollbar_magic()
+
         self.cl.update_listing(self.state["moves"])
         self.update_ce()
-        self.ct.horz_scrollbar_magic()
 
     def make_tree(self, tree_dict):
         self.ct.make_tree(self.state["variations"], tree_dict)
