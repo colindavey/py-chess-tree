@@ -229,8 +229,10 @@ class App(object):
         self.state, _ = chess_model_api_client('diddle_var', self.state, diddle=diddle, san=san)
 
         self.ct.diddle_var_tree(diddle)
-        next_move_str = self.c.next_move_str.get()
-        self.c.next_move_str.set(next_move_str)
+        # 2/14/21 these two lines don't seem necessary, commented out
+        # quick check shows it still seems to work
+        # next_move_str = self.c.next_move_str.get()
+        # self.c.next_move_str.set(next_move_str)
 
         # self.c.update_display(self.state["has_parent"], self.state["variations"])
         if diddle == 'remove':
