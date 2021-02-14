@@ -88,22 +88,20 @@ class App(object):
         self.c = Controls(self.left)
 
         # Configure controls
+        self.c.openBtn.config(command=lambda: self.ct.open_all(True))
+        self.c.closeBtn.config(command=self.close_all_but_current)
+
+        self.c.removeVarBtn.config(command=lambda: self.diddle_var('remove'))
+        self.c.promote2MainVarBtn.config(command=lambda: self.diddle_var('promote2main'))
+        self.c.promoteVarBtn.config(command=lambda: self.diddle_var('promote'))
+        self.c.demoteVarBtn.config(command=lambda: self.diddle_var('demote'))
+
         self.c.backFullBtn.config(command=self.move_back_full)
         self.c.backBtn.config(command=self.move_back)
         self.c.frwdBtn.config(command=self.move_frwd)
         self.c.frwdFullBtn.config(command=self.move_frwd_full)
 
-        self.c.removeVarBtn.config(command=self.remove_var)
-        self.c.promote2MainVarBtn.config(command=self.promote2main_var)
-        self.c.promoteVarBtn.config(command=self.promote_var)
-        self.c.demoteVarBtn.config(command=self.demote_var)
-
         self.c.commentBtn.config(command=self.handle_comment_button)
-
-        self.c.openBtn.config(command=self.open_all)
-        self.c.closeBtn.config(command=self.close_all_but_current)
-
-        self.c.next_move_str.trace('w', self.next_move_str_trace)
 
         #######################################
         # Create the right top widgents
@@ -173,7 +171,7 @@ class App(object):
             f.close()
 
     #################################
-    # updates display
+    # Manipulates GUI
     #################################
     def update_display(self):
         self.bv.update(self.state["piece_distrib"], self.state["legal_moves"], self.state["turn"])
@@ -192,9 +190,15 @@ class App(object):
         self.ct.make_tree(self.state["variations"], tree_dict)
         self.ct.horz_scrollbar_magic()
 
+    def close_all_but_current(self):
+        self.ct.open_all(False)
+
     #################################
     # Fits pattern
     #   give user input, results in call to chess model and change to GUI
+    #################################
+    #################################
+    # Change model, but not board state
     #################################
     def set_player(self):
         # self.is_white is a control variable attached to the White/Black radio buttons
@@ -205,9 +209,6 @@ class App(object):
 
         self.ct.update_tree_node(self.state["root_node_str"], self.ct.get_root_node())
 
-    ##############################
-    # change board state
-    ##############################
     def diddle_var(self, diddle):
         san = self.c.next_move_str.get()
         self.state, _ = chess_model_api_client('diddle_var', self.state, diddle=diddle, san=san)
@@ -220,8 +221,34 @@ class App(object):
         if diddle == 'remove':
             san = ''
         self.c.update_next_move_option_menu(self.state["variations"], san)
+        if diddle == 'remove':
+            self.c.update_display(self.state["has_parent"], self.state["variations"])
 
-    # moves
+    def load_pgn(self):
+        # get filename
+        filename = tkfiledialog.askopenfilename(filetypes=[('pgn files', '*.pgn')])
+        print("loading ", filename)
+        if filename != '':
+   #        # !!!Error handling
+            with open(filename,"r") as f:
+                self.state["pgn_str"] = f.read()
+            self.state["moves"] = []
+            self.state, _ = chess_model_api_client('move_back_full', self.state)
+            self.set_player()
+
+            tree_dict = json.loads(
+                chess_model_api_make_tree(json_state(self.state)))
+
+            self.make_tree(tree_dict)
+            self.update_display()
+        # put the focus back on the tree so keyboard works.
+        self.parent.lift()
+        # self.ct.tree.focus_force()
+        self.ct.tree.focus_set()
+
+    ##############################
+    # Change model: board state (moves)
+    ##############################
 
     # from listing click
     def move_to_cl(self, moves):
@@ -275,52 +302,9 @@ class App(object):
             self.update_display()
             self.close_all_but_current()
 
-    def load_pgn(self):
-        # get filename
-        filename = tkfiledialog.askopenfilename(filetypes=[('pgn files', '*.pgn')])
-        print("loading ", filename)
-        if filename != '':
-   #        # !!!Error handling
-            with open(filename,"r") as f:
-                self.state["pgn_str"] = f.read()
-            self.state["moves"] = []
-            self.state, _ = chess_model_api_client('move_back_full', self.state)
-            self.set_player()
-
-            tree_dict = json.loads(
-                chess_model_api_make_tree(json_state(self.state)))
-
-            self.make_tree(tree_dict)
-            self.update_display()
-        # put the focus back on the tree so keyboard works.
-        self.parent.lift()
-        # self.ct.tree.focus_force()
-        self.ct.tree.focus_set()
-
     ##############################
     # Candidates to put elsewhere
     ##############################
-
-    def open_all(self):
-        self.ct.open_all(True)
-
-    def close_all_but_current(self):
-        self.ct.open_all(False)
-
-    # controls just needs to call diddle_var directly w diddle as parameter
-    # special line after remove_var can go with case already there for remove_var
-    def remove_var(self):
-        self.diddle_var('remove')
-        self.c.update_display(self.state["has_parent"], self.state["variations"])
-
-    def promote2main_var(self):
-        self.diddle_var('promote2main')
-
-    def promote_var(self):
-        self.diddle_var('promote')
-
-    def demote_var(self):
-        self.diddle_var('demote')
 
     # when the next move menu changes, next_move_str changes bringing control to here.
     # this routine updates the tree.
