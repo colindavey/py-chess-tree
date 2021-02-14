@@ -78,38 +78,63 @@ class Controls(tk.Frame):
         print('update_display', variations)
 
         # diable all the buttons if there are no variations
-        # because of above, len(variations) == 0 is equiv to no variations
         new_state = tk.NORMAL
         if len(variations) == 0:
             new_state = tk.DISABLED
-            self.removeVarBtn.config(state=new_state)
-            self.promote2MainVarBtn.config(state=new_state)
-            self.promoteVarBtn.config(state=new_state)
-            self.demoteVarBtn.config(state=new_state)
-        else:
-            if next_move_str == '':
-                next_move_str = variations[0]
-            self.removeVarBtn.config(state=new_state)
-            new_state = tk.NORMAL
-            if variations[0] == next_move_str:
-                new_state = tk.DISABLED
-            self.promote2MainVarBtn.config(state=new_state)
-            self.promoteVarBtn.config(state=new_state)
+        self.removeVarBtn.config(state=new_state)
+        self.promote2MainVarBtn.config(state=new_state)
+        self.promoteVarBtn.config(state=new_state)
+        self.demoteVarBtn.config(state=new_state)
 
-            new_state = tk.NORMAL
-            if variations[-1] == next_move_str:
-                new_state = tk.DISABLED
-            self.demoteVarBtn.config(state=new_state)
+       # diable back button if can't go back no more
+        new_state = tk.NORMAL
+        if not has_parent:
+            new_state = tk.DISABLED
+        self.backBtn.config(state=new_state)
+        self.backFullBtn.config(state=new_state)
 
+        # diable all the buttons if there are no variations
         new_state = tk.NORMAL
         if len(variations) == 0:
             new_state = tk.DISABLED
         self.frwdBtn.config(state=new_state)
         self.frwdFullBtn.config(state=new_state)
 
-        # diable back buttons if can't go back no more
-        new_state = tk.NORMAL
-        if not has_parent:
-            new_state = tk.DISABLED
-        self.backBtn.config(state=new_state)
-        self.backFullBtn.config(state=new_state)
+# This logic didn't work for various reasons, but keeping for reference
+# One issue was doesn't get invoked when uses changes menu selection via menu
+        # # diable all the buttons if there are no variations
+        # # because of above, len(variations) == 0 is equiv to no variations
+        # new_state = tk.NORMAL
+        # if len(variations) == 0:
+        #     new_state = tk.DISABLED
+        #     self.removeVarBtn.config(state=new_state)
+        #     self.promote2MainVarBtn.config(state=new_state)
+        #     self.promoteVarBtn.config(state=new_state)
+        #     self.demoteVarBtn.config(state=new_state)
+        # else:
+        #     if next_move_str == '':
+        #         next_move_str = variations[0]
+        #     self.removeVarBtn.config(state=new_state)
+        #     new_state = tk.NORMAL
+        #     if variations[0] == next_move_str:
+        #         new_state = tk.DISABLED
+        #     self.promote2MainVarBtn.config(state=new_state)
+        #     self.promoteVarBtn.config(state=new_state)
+
+        #     new_state = tk.NORMAL
+        #     if variations[-1] == next_move_str:
+        #         new_state = tk.DISABLED
+        #     self.demoteVarBtn.config(state=new_state)
+
+        # new_state = tk.NORMAL
+        # if len(variations) == 0:
+        #     new_state = tk.DISABLED
+        # self.frwdBtn.config(state=new_state)
+        # self.frwdFullBtn.config(state=new_state)
+
+        # # diable back buttons if can't go back no more
+        # new_state = tk.NORMAL
+        # if not has_parent:
+        #     new_state = tk.DISABLED
+        # self.backBtn.config(state=new_state)
+        # self.backFullBtn.config(state=new_state)
