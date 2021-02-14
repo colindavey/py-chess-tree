@@ -177,9 +177,9 @@ class App(object):
     #################################
     def update_display(self):
         self.bv.update(self.state["piece_distrib"], self.state["legal_moves"], self.state["turn"])
-        self.do_trace = False
+        # self.do_trace = False
         self.c.update_display(self.state["has_parent"], self.state["variations"])
-        self.do_trace = True
+        # self.do_trace = True
         # make sure the appropriate tree node is selected based on the current move
         # and the appropriate variation of the move is secondary selected
         next_move = self.c.next_move_str.get()
@@ -194,10 +194,6 @@ class App(object):
 
     def close_all_but_current(self):
         self.ct.open_all(False)
-
-    ##############################
-    # Candidates to put elsewhere
-    ##############################
 
     # when the next move menu changes, next_move_str changes bringing control to here.
     # this routine updates the tree.
@@ -234,12 +230,13 @@ class App(object):
         # next_move_str = self.c.next_move_str.get()
         # self.c.next_move_str.set(next_move_str)
 
-        # self.c.update_display(self.state["has_parent"], self.state["variations"])
-        if diddle == 'remove':
-            san = ''
-        self.c.update_next_move_option_menu(self.state["variations"], san)
-        if diddle == 'remove':
-            self.c.update_display(self.state["has_parent"], self.state["variations"])
+        # # self.c.update_display(self.state["has_parent"], self.state["variations"])
+        # if diddle == 'remove':
+        #     san = ''
+        # self.c.update_next_move_option_menu(self.state["variations"], san)
+        # if diddle == 'remove':
+        #     self.c.update_display(self.state["has_parent"], self.state["variations"])
+        self.c.update_display(self.state["has_parent"], self.state["variations"], san)
 
     def load_pgn(self):
         # get filename

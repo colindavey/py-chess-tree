@@ -73,24 +73,43 @@ class Controls(tk.Frame):
         #     self.nextMoveOMen['menu'].add_command(label='<none>')
         #     self.next_move_str.set('')
 
-    def update_display(self, has_parent, variations):
-        self.update_next_move_option_menu(variations)
-
-        # diable back button if can't go back no more
-        new_state = tk.NORMAL
-        if not has_parent:
-            new_state = tk.DISABLED
-        self.backBtn.config(state=new_state)
-        self.backFullBtn.config(state=new_state)
+    def update_display(self, has_parent, variations, next_move_str=''):
+        self.update_next_move_option_menu(variations, next_move_str)
+        print('update_display', variations)
 
         # diable all the buttons if there are no variations
         # because of above, len(variations) == 0 is equiv to no variations
         new_state = tk.NORMAL
         if len(variations) == 0:
             new_state = tk.DISABLED
+            self.removeVarBtn.config(state=new_state)
+            self.promote2MainVarBtn.config(state=new_state)
+            self.promoteVarBtn.config(state=new_state)
+            self.demoteVarBtn.config(state=new_state)
+        else:
+            if next_move_str == '':
+                next_move_str = variations[0]
+            self.removeVarBtn.config(state=new_state)
+            new_state = tk.NORMAL
+            if variations[0] == next_move_str:
+                new_state = tk.DISABLED
+            self.promote2MainVarBtn.config(state=new_state)
+            self.promoteVarBtn.config(state=new_state)
+
+            new_state = tk.NORMAL
+            if variations[-1] == next_move_str:
+                new_state = tk.DISABLED
+            self.demoteVarBtn.config(state=new_state)
+
+        new_state = tk.NORMAL
+        if len(variations) == 0:
+            new_state = tk.DISABLED
         self.frwdBtn.config(state=new_state)
         self.frwdFullBtn.config(state=new_state)
-        self.removeVarBtn.config(state=new_state)
-        self.promote2MainVarBtn.config(state=new_state)
-        self.promoteVarBtn.config(state=new_state)
-        self.demoteVarBtn.config(state=new_state)
+
+        # diable back buttons if can't go back no more
+        new_state = tk.NORMAL
+        if not has_parent:
+            new_state = tk.DISABLED
+        self.backBtn.config(state=new_state)
+        self.backFullBtn.config(state=new_state)
