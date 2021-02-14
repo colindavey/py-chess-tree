@@ -193,6 +193,19 @@ class App(object):
     def close_all_but_current(self):
         self.ct.open_all(False)
 
+    ##############################
+    # Candidates to put elsewhere
+    ##############################
+
+    # when the next move menu changes, next_move_str changes bringing control to here.
+    # this routine updates the tree.
+    # we don't use the last three parameters
+    def next_move_str_trace(self, a, b, c):
+        if self.do_trace:
+            next_move = self.c.next_move_str.get()
+            print("*** from next_move_str_trace")
+            self.ct.update_tree_selection_2ndary(next_move)
+
     #################################
     # Fits pattern
     #   give user input, results in call to chess model and change to GUI
@@ -302,21 +315,8 @@ class App(object):
             self.update_display()
             self.close_all_but_current()
 
-    ##############################
-    # Candidates to put elsewhere
-    ##############################
-
-    # when the next move menu changes, next_move_str changes bringing control to here.
-    # this routine updates the tree.
-    # we don't use the last three parameters
-    def next_move_str_trace(self, a, b, c):
-        if self.do_trace:
-            next_move = self.c.next_move_str.get()
-            print("*** from next_move_str_trace")
-            self.ct.update_tree_selection_2ndary(next_move)
-
     #################################
-    # Comment editing
+    # Comment editing (put elsewhere?)
     #################################
     def update_ce(self):
         if self.ce_root is not None:
