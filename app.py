@@ -86,6 +86,7 @@ class App(object):
         #######################################
         # self.c = Controls(self.parent)
         self.c = Controls(self.left)
+        self.c.next_move_str.trace('w', self.next_move_str_trace)
 
         # Configure controls
         self.c.openBtn.config(command=lambda: self.ct.open_all(True))
@@ -103,6 +104,7 @@ class App(object):
 
         self.c.commentBtn.config(command=self.handle_comment_button)
 
+        
         #######################################
         # Create the right top widgents
         #######################################
