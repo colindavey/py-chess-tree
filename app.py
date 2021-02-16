@@ -82,30 +82,6 @@ class App(object):
         self.bv = BoardView(self.left, self.move, is_white=is_white)
 
         #######################################
-        # Create the controls (c)
-        #######################################
-        # self.c = Controls(self.parent)
-        self.c = Controls(self.left)
-        self.c.next_move_str.trace('w', self.next_move_str_trace)
-
-        # Configure controls
-        self.c.openBtn.config(command=lambda: self.ct.open_all(True))
-        self.c.closeBtn.config(command=self.close_all_but_current)
-
-        self.c.removeVarBtn.config(command=lambda: self.diddle_var('remove'))
-        self.c.promote2MainVarBtn.config(command=lambda: self.diddle_var('promote2main'))
-        self.c.promoteVarBtn.config(command=lambda: self.diddle_var('promote'))
-        self.c.demoteVarBtn.config(command=lambda: self.diddle_var('demote'))
-
-        self.c.backFullBtn.config(command=self.move_back_full)
-        self.c.backBtn.config(command=self.move_back)
-        self.c.frwdBtn.config(command=self.move_frwd)
-        self.c.frwdFullBtn.config(command=self.move_frwd_full)
-
-        self.c.commentBtn.config(command=self.handle_comment_button)
-
-        
-        #######################################
         # Create the right top widgents
         #######################################
         self.loadBtn = tk.Button(self.right_top, text="Load")
@@ -131,6 +107,29 @@ class App(object):
         # self.cl.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         self.cl = ChessListing(self.right, self.move_to_cl)
 
+        #######################################
+        # Create the controls (c)
+        #######################################
+        # self.c = Controls(self.parent)
+        self.c = Controls(self.left)
+        self.c.next_move_str.trace('w', self.next_move_str_trace)
+
+        # Configure controls
+        self.c.openBtn.config(command=lambda: self.ct.open_all(True))
+        self.c.closeBtn.config(command=self.close_all_but_current)
+
+        self.c.removeVarBtn.config(command=lambda: self.diddle_var('remove'))
+        self.c.promote2MainVarBtn.config(command=lambda: self.diddle_var('promote2main'))
+        self.c.promoteVarBtn.config(command=lambda: self.diddle_var('promote'))
+        self.c.demoteVarBtn.config(command=lambda: self.diddle_var('demote'))
+
+        self.c.backFullBtn.config(command=self.move_back_full)
+        self.c.backBtn.config(command=self.move_back)
+        self.c.frwdBtn.config(command=self.move_frwd)
+        self.c.frwdFullBtn.config(command=self.move_frwd_full)
+
+        self.c.commentBtn.config(command=self.handle_comment_button)
+        
         #######################################
         # Create the chess tree (ct)
         #######################################
@@ -178,17 +177,17 @@ class App(object):
     def update_display(self):
         self.bv.update(self.state["piece_distrib"], self.state["legal_moves"], self.state["turn"])
 
+        self.cl.update_listing(self.state["moves"])
+        self.update_ce()
+
         # self.do_trace = False
         self.c.update_display(self.state["has_parent"], self.state["variations"])
         # self.do_trace = True
         # make sure the appropriate tree node is selected based on the current move
         # and the appropriate variation of the move is secondary selected
         next_move = self.c.next_move_str.get()
-        self.ct.update_tree(self.state["moves"], next_move)
+        self.ct.update_tree_selection(self.state["moves"], next_move)
         self.ct.horz_scrollbar_magic()
-
-        self.cl.update_listing(self.state["moves"])
-        self.update_ce()
 
     def make_tree(self, tree_dict):
         self.ct.make_tree(self.state["variations"], tree_dict)

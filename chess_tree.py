@@ -211,7 +211,7 @@ class ChessTree(tk.Frame):
         # print('  *** finished loop')
         # return child
 
-    def update_tree(self, moves, next_move):
+    def update_tree_selection(self, moves, next_move):
         # select the node of the current move by traversing through the moves.
         # the premise is that all the moves are in the tree
         tree_node = self.get_root_node()
@@ -222,7 +222,7 @@ class ChessTree(tk.Frame):
 
         self.tree.selection_set(tree_node)
         # self.tree.see(tree_node)
-        print("*** from update_tree")
+        print("*** from update_tree_selection")
         self.update_tree_selection_2ndary(next_move)
 
     def update_tree_selection_2ndary(self, next_move):
