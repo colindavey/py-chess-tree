@@ -139,17 +139,14 @@ class App(object):
         self.do_trace = True
         # initialize separate comment editor window, which doesn't exist yet
         self.ce_root = None
-        self.ce_tree_node = None
+        self.ce_tree_node_moves = None
 
         #######################################
         # Create the chess model (cm)
         #######################################
         self.state = json.loads(chess_model_api_init())
         self.state, _ = chess_model_api_client('set_headers', self.state, is_white=is_white)
-        tree_dict = json.loads(
-            chess_model_api_make_tree(json_state(self.state)))
-        self.make_tree(tree_dict)
-        self.update_display()
+        self.make_tree()
 
     #################################
     # Starting stopping and saving
@@ -160,10 +157,6 @@ class App(object):
             self.ce_root.destroy()
         self.parent.destroy()
 
-    # def run(self):
-    #     self.update_display()
-    #     tk.mainloop()
-
     def save_pgn(self):
         # get filename
         filename = tkfiledialog.asksaveasfilename(defaultextension='.pgn')
@@ -171,28 +164,27 @@ class App(object):
             f = open(filename, 'w')
             print(self.state["pgn_str"], file=f)
             f.close()
+        self.parent.focus_force()
 
     #################################
     # Manipulates GUI
     #################################
     def update_display(self):
         self.bv.update(self.state["piece_distrib"], self.state["legal_moves"], self.state["turn"])
-
         self.cl.update_listing(self.state["moves"])
         self.update_ce()
-
-        # self.do_trace = False
+    
         self.c.update_display(self.state["has_parent"], self.state["variations"])
-        # self.do_trace = True
         # make sure the appropriate tree node is selected based on the current move
         # and the appropriate variation of the move is secondary selected
         next_move = self.c.next_move_str.get()
         self.ct.update_tree_selection(self.state["moves"], next_move)
-        self.ct.horz_scrollbar_magic()
 
-    def make_tree(self, tree_dict):
+    def make_tree(self):
+        tree_dict = json.loads(
+            chess_model_api_make_tree(json_state(self.state)))
         self.ct.make_tree(self.state["variations"], tree_dict)
-        self.ct.horz_scrollbar_magic()
+        self.update_display()
 
     def close_all_but_current(self):
         self.ct.open_all(False)
@@ -219,8 +211,7 @@ class App(object):
         self.bv.set_player(is_white)
         self.bv.update_display(self.state["piece_distrib"])
         self.state, _ = chess_model_api_client('set_headers', self.state, is_white=is_white)
-
-        self.ct.update_tree_node(self.state["root_node_str"], self.ct.get_root_node())
+        self.ct.update_tree_node(self.state["root_node_str"], [])
 
     def diddle_var(self, diddle):
         san = self.c.next_move_str.get()
@@ -253,16 +244,8 @@ class App(object):
             self.state["moves"] = []
             self.state, _ = chess_model_api_client('move_back_full', self.state)
             self.set_player()
-
-            tree_dict = json.loads(
-                chess_model_api_make_tree(json_state(self.state)))
-
-            self.make_tree(tree_dict)
-            self.update_display()
-        # put the focus back on the tree so keyboard works.
-        self.parent.lift()
-        # self.ct.tree.focus_force()
-        self.ct.tree.focus_set()
+            self.make_tree()
+        self.parent.focus_force()
 
     ##############################
     # Change model: board state (moves)
@@ -331,7 +314,7 @@ class App(object):
             self.ce.editor.edit_modified(False)
             # this is only necessary in case the user makes the next node by clicking on the tree.
             # otherwise, we could just use the selected node at that time.
-            self.ce_tree_node = self.ct.get_selected_node()
+            self.ce_tree_node_moves = self.state['moves'] 
 
     def handle_comment_button(self):
         if self.ce_root is None:
@@ -382,7 +365,7 @@ class App(object):
         self.state, _ = chess_model_api_client('set_comment', self.state, comment=comment)
         self.ce.save_button.configure(state=tk.DISABLED)
         self.ce.editor.edit_modified(False)
-        self.ct.update_tree_node(self.state["node_str"], self.ce_tree_node)
+        self.ct.update_tree_node(self.state["node_str"], self.ce_tree_node_moves)
 
     def on_closing_comment_editor(self):
         self.ce_root.destroy()
@@ -391,5 +374,4 @@ class App(object):
 if __name__ == "__main__":
     the_parent = tk.Tk()
     app = App(the_parent)
-    # app.run()
     tk.mainloop()

@@ -65,18 +65,6 @@ class ChessTree(tk.Frame):
         # self.tree.configure(takefocus=1)        
         self.move_to_tree_node_cb = move_to_tree_node_cb
 
-    # tree changes due to clicks or key presses allow actions on tree selection changes
-    # otherwise not
-    # prevents handle_node_select from running unless it was a direct result of a click,
-    # or key press as opposed to programatically
-    def handle_tree_click(self, event):
-        self.tree_clicked = True
-
-    def handle_node_select(self, event):
-        if self.tree_clicked:
-            self.move_to_tree_node_cb(self.get_tree_moves())
-            self.tree_clicked = False
-
     def make_tree(self, variations, tree_dict):
         # empty tree
         children = self.tree.get_children('')
@@ -90,6 +78,101 @@ class ChessTree(tk.Frame):
         if len(variations) > 0:
             print("*** from make_tree")
             self.update_tree_selection_2ndary(variations[0])
+
+    # def update_tree_node(self, str, selected_node):
+    #     self.tree.item(selected_node, text=str)
+    def update_tree_node(self, str, moves):
+        selected_node = self.get_node_from_moves(moves)
+        self.tree.item(selected_node, text=str)
+
+    def update_tree_selection(self, moves, next_move):
+        tree_node = self.get_node_from_moves(moves)
+        self.tree.selection_set(tree_node)
+        # self.tree.see(tree_node)
+        print("*** from update_tree_selection")
+        self.update_tree_selection_2ndary(next_move)
+        self.horz_scrollbar_magic()
+
+    def update_tree_selection_2ndary(self, next_move):
+        print("** update_tree_selection_2ndary", next_move)
+        # untag the previous selection variation
+        # premise is that there is at most one
+        tagged_ids = self.tree.tag_has("sel_var")
+        if len(tagged_ids) > 0:
+            self.tree.item(tagged_ids[0], tags='all')
+        if next_move == '':
+            return
+
+        # get the selected node of the tree
+        selected_node = self.get_selected_node()
+
+        # tag the new selection variation
+        childrenIDs = self.tree.get_children(selected_node)
+        if len(childrenIDs) > 0:
+            tree_node = self.get_node_with_move(selected_node, next_move)
+            self.tree.item(tree_node, tags=['sel_var', 'all'])
+
+    def diddle_var_tree(self, diddle):
+        sel_secondary_items = self.tree.tag_has("sel_var")
+        if len(sel_secondary_items) > 0:
+            sel_secondary_item = sel_secondary_items[0]
+
+        index = self.tree.index(sel_secondary_item)
+
+        if diddle == 'remove':
+            self.tree.delete(sel_secondary_item)
+        else:
+            # get the selected node of the tree
+            selected_node = self.get_selected_node()
+            if diddle == 'promote2main':
+                new_index = 0
+            elif diddle == 'promote':
+                new_index = index - 1
+            elif diddle == 'demote':
+                new_index = index + 1
+            self.tree.move(sel_secondary_item, selected_node, new_index)
+
+    def add_node_to_tree(self, san_str):
+        # get the selected node of the tree
+        selected_node = self.get_selected_node()
+        # add the current move at the end of the selected node's children
+        self.tree.insert(selected_node, "end", text=san_str, open=True, tags='all')
+
+    def open_all(self, bool_in):
+        items = self.tree.tag_has('all')
+        for item in items:
+            self.tree.item(item, open=bool_in)
+        # if closing, make sure that it's at least open to the current move
+        if not bool_in:
+            node = self.get_selected_node()
+            self.tree.see(node)
+            self.tree.item(node, open=True)
+# PRIVATE
+
+    # get the initial position node
+    # assumes exactly one initial node, representing the starting position
+    def get_root_node(self):
+        rootIDs = self.tree.get_children('')
+        return rootIDs[0]
+
+    def get_selected_node(self):
+        selected_node = self.get_root_node()
+        sel_items = self.tree.selection()
+        if len(sel_items) > 0:
+            selected_node = sel_items[0]
+        return selected_node
+
+    # tree changes due to clicks or key presses allow actions on tree selection changes
+    # otherwise not
+    # prevents handle_node_select from running unless it was a direct result of a click,
+    # or key press as opposed to programatically
+    def handle_tree_click(self, event):
+        self.tree_clicked = True
+
+    def handle_node_select(self, event):
+        if self.tree_clicked:
+            self.move_to_tree_node_cb(self.get_tree_moves())
+            self.tree_clicked = False
 
     def tree_pgn_node_recur(self, dict_node, parent):
         parent = self.tree.insert(parent, "end", text=dict_node["label"], open=True, tags='all')
@@ -111,6 +194,28 @@ class ChessTree(tk.Frame):
             tmp_node = self.tree.parent(tmp_node)
         moves.reverse()
         return moves
+
+    def get_node_from_moves(self, moves):
+        # select the node of the current move by traversing through the moves.
+        # the premise is that all the moves are in the tree
+        tree_node = self.get_root_node()
+        for move in moves:
+            # should always pass this if, since the premise is that all moves are in the tree
+            if len(self.tree.get_children(tree_node)) > 0:
+                tree_node = self.get_node_with_move(tree_node, move)
+        return tree_node
+
+    def get_node_with_move(self, tree_node, move):
+        print('* get_node_with_move', move, len(self.tree.get_children(tree_node)))
+        # Should always find move, ie, should only call this if move exists.
+        for child in self.tree.get_children(tree_node):
+            tmptext = self.tree.item(child, 'text')
+            tmptext_bits = tmptext.split(' ')
+            tmptext = tmptext_bits[1]
+            if tmptext == move:
+                return child
+        # print('  *** finished loop')
+        # return child
 
     def horz_scrollbar_magic(self):
         # uses magic numbers 2 and 20, which I found to be the x offset of the root item
@@ -194,101 +299,3 @@ class ChessTree(tk.Frame):
             # self.tree.column('#0', minwidth=max_w)
             # self.tree.column('#0', minwidth=1000)
             # self.tree.column('#0', minwidth=520)
-
-    def update_tree_node(self, str, tree_node):
-        selected_node = tree_node
-        self.tree.item(selected_node, text=str)
-
-    def get_node_with_move(self, tree_node, move):
-        print('* get_node_with_move', move, len(self.tree.get_children(tree_node)))
-        # Should always find move, ie, should only call this if move exists.
-        for child in self.tree.get_children(tree_node):
-            tmptext = self.tree.item(child, 'text')
-            tmptext_bits = tmptext.split(' ')
-            tmptext = tmptext_bits[1]
-            if tmptext == move:
-                return child
-        # print('  *** finished loop')
-        # return child
-
-    def update_tree_selection(self, moves, next_move):
-        # select the node of the current move by traversing through the moves.
-        # the premise is that all the moves are in the tree
-        tree_node = self.get_root_node()
-        for move in moves:
-            # should always pass this if, since the premise is that all moves are in the tree
-            if len(self.tree.get_children(tree_node)) > 0:
-                tree_node = self.get_node_with_move(tree_node, move)
-
-        self.tree.selection_set(tree_node)
-        # self.tree.see(tree_node)
-        print("*** from update_tree_selection")
-        self.update_tree_selection_2ndary(next_move)
-
-    def update_tree_selection_2ndary(self, next_move):
-        print("** update_tree_selection_2ndary", next_move)
-        # untag the previous selection variation
-        # premise is that there is at most one
-        tagged_ids = self.tree.tag_has("sel_var")
-        if len(tagged_ids) > 0:
-            self.tree.item(tagged_ids[0], tags='all')
-        if next_move == '':
-            return
-
-        # get the selected node of the tree
-        selected_node = self.get_selected_node()
-
-        # tag the new selection variation
-        childrenIDs = self.tree.get_children(selected_node)
-        if len(childrenIDs) > 0:
-            tree_node = self.get_node_with_move(selected_node, next_move)
-            self.tree.item(tree_node, tags=['sel_var', 'all'])
-
-    def diddle_var_tree(self, diddle):
-        sel_secondary_items = self.tree.tag_has("sel_var")
-        if len(sel_secondary_items) > 0:
-            sel_secondary_item = sel_secondary_items[0]
-
-        index = self.tree.index(sel_secondary_item)
-
-        if diddle == 'remove':
-            self.tree.delete(sel_secondary_item)
-        else:
-            # get the selected node of the tree
-            selected_node = self.get_selected_node()
-            if diddle == 'promote2main':
-                new_index = 0
-            elif diddle == 'promote':
-                new_index = index - 1
-            elif diddle == 'demote':
-                new_index = index + 1
-            self.tree.move(sel_secondary_item, selected_node, new_index)
-
-    def add_node_to_tree(self, san_str):
-        # get the selected node of the tree
-        selected_node = self.get_selected_node()
-        # add the current move at the end of the selected node's children
-        self.tree.insert(selected_node, "end", text=san_str, open=True, tags='all')
-
-    def open_all(self, bool_in):
-        items = self.tree.tag_has('all')
-        for item in items:
-            self.tree.item(item, open=bool_in)
-        # if closing, make sure that it's at least open to the current move
-        if not bool_in:
-            node = self.get_selected_node()
-            self.tree.see(node)
-            self.tree.item(node, open=True)
-
-    def get_selected_node(self):
-        selected_node = self.get_root_node()
-        sel_items = self.tree.selection()
-        if len(sel_items) > 0:
-            selected_node = sel_items[0]
-        return selected_node
-
-    # get the initial position node
-    # assumes exactly one initial node, representing the starting position
-    def get_root_node(self):
-        rootIDs = self.tree.get_children('')
-        return rootIDs[0]
