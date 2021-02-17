@@ -115,8 +115,8 @@ class App(object):
         self.c.next_move_str.trace('w', self.ctc_next_move_str_trace)
 
         # Configure controls
-        self.c.openBtn.config(command=lambda: self.ct.open_all(True))
-        self.c.closeBtn.config(command=self.ctc_close_all_but_current)
+        self.c.openBtn.config(command=lambda: self.ctc_open_all(True))
+        self.c.closeBtn.config(command=lambda: self.ctc_open_all(False))
 
         self.c.removeVarBtn.config(command=lambda: self.ctc_diddle_var('remove'))
         self.c.promote2MainVarBtn.config(command=lambda: self.ctc_diddle_var('promote2main'))
@@ -179,8 +179,8 @@ class App(object):
     def ctc_make_tree(self, variations, tree_dict):
         self.ct.make_tree(variations, tree_dict)
 
-    def ctc_close_all_but_current(self):
-        self.ct.open_all(False)
+    def ctc_open_all(self, value):
+        self.ct.open_all(value)
 
     # when the next move menu changes, next_move_str changes bringing control to here.
     # this routine updates the tree.
@@ -266,7 +266,7 @@ class App(object):
         if self.check_comment():
             self.state, _ = chess_model_api_client('move_to', self.state, moves=moves)
             self.update_display()
-            self.ctc_close_all_but_current()
+            self.ctc_open_all(False)
 
     # from tree click
     def move_to_tree_node(self, moves):
@@ -293,25 +293,25 @@ class App(object):
         if self.check_comment():
             self.state, _ = chess_model_api_client('move_back_full', self.state)
             self.update_display()
-            self.ctc_close_all_but_current()
+            self.ctc_open_all(False)
 
     def move_back(self):
         if self.check_comment():
             self.state, _ = chess_model_api_client('move_back', self.state)
             self.update_display()
-            self.ctc_close_all_but_current()
+            self.ctc_open_all(False)
 
     def move_frwd(self):
         if self.check_comment():
             self.state, _ = chess_model_api_client('move_frwd', self.state, san=self.ctc_get_next_move_str())
             self.update_display()
-            self.ctc_close_all_but_current()
+            self.ctc_open_all(False)
 
     def move_frwd_full(self):
         if self.check_comment():
             self.state, _ = chess_model_api_client('move_frwd_full', self.state)
             self.update_display()
-            self.ctc_close_all_but_current()
+            self.ctc_open_all(False)
 
     #################################
     # Comment editing (put elsewhere?)
