@@ -54,29 +54,12 @@ class Controls(tk.Frame):
 
         self.pack()
 
-    def update_next_move_option_menu(self, variations, next_move_str=''):
-        # reconfigure the listbox of next moves based on the current node
-        # empty the listbox
-        self.next_move_str.set('')
-        self.nextMoveOMen['menu'].delete(0, 'end')
-        # fill the listbox with the variations
-        for variation in variations:
-            # !!!maybe do self.next_move_str.set(variation) ?
-            self.nextMoveOMen['menu'].add_command(label=variation, command=tk._setit(self.next_move_str, variation))
-        # if there are variations, set it to the first one
-        if len(variations) > 0:
-            if next_move_str != '':
-                self.next_move_str.set(next_move_str)
-            else:
-                self.next_move_str.set(variations[0])
-        # else:
-        #     self.nextMoveOMen['menu'].add_command(label='<none>')
-        #     self.next_move_str.set('')
-
     def update_display(self, has_parent, variations, next_move_str=''):
         self.update_next_move_option_menu(variations, next_move_str)
         print('update_display', variations)
+        self.update_buttons(has_parent, variations)
 
+    def update_buttons(self, has_parent, variations):
         # diable all the buttons if there are no variations
         new_state = tk.NORMAL
         if len(variations) == 0:
@@ -138,3 +121,26 @@ class Controls(tk.Frame):
         #     new_state = tk.DISABLED
         # self.backBtn.config(state=new_state)
         # self.backFullBtn.config(state=new_state)
+
+    ###################################
+    # Private
+    ###################################
+    def update_next_move_option_menu(self, variations, next_move_str=''):
+        # reconfigure the listbox of next moves based on the current node
+        # empty the listbox
+        self.next_move_str.set('')
+        self.nextMoveOMen['menu'].delete(0, 'end')
+        # fill the listbox with the variations
+        for variation in variations:
+            # !!!maybe do self.next_move_str.set(variation) ?
+            self.nextMoveOMen['menu'].add_command(label=variation, command=tk._setit(self.next_move_str, variation))
+        # if there are variations, set it to the first one
+        if len(variations) > 0:
+            if next_move_str != '':
+                self.next_move_str.set(next_move_str)
+            else:
+                self.next_move_str.set(variations[0])
+        # else:
+        #     self.nextMoveOMen['menu'].add_command(label='<none>')
+        #     self.next_move_str.set('')
+

@@ -112,16 +112,16 @@ class App(object):
         #######################################
         # self.c = Controls(self.parent)
         self.c = Controls(self.left)
-        self.c.next_move_str.trace('w', self.next_move_str_trace)
+        self.c.next_move_str.trace('w', self.ctc_next_move_str_trace)
 
         # Configure controls
         self.c.openBtn.config(command=lambda: self.ct.open_all(True))
-        self.c.closeBtn.config(command=self.close_all_but_current)
+        self.c.closeBtn.config(command=self.ctc_close_all_but_current)
 
-        self.c.removeVarBtn.config(command=lambda: self.diddle_var('remove'))
-        self.c.promote2MainVarBtn.config(command=lambda: self.diddle_var('promote2main'))
-        self.c.promoteVarBtn.config(command=lambda: self.diddle_var('promote'))
-        self.c.demoteVarBtn.config(command=lambda: self.diddle_var('demote'))
+        self.c.removeVarBtn.config(command=lambda: self.ctc_diddle_var('remove'))
+        self.c.promote2MainVarBtn.config(command=lambda: self.ctc_diddle_var('promote2main'))
+        self.c.promoteVarBtn.config(command=lambda: self.ctc_diddle_var('promote'))
+        self.c.demoteVarBtn.config(command=lambda: self.ctc_diddle_var('demote'))
 
         self.c.backFullBtn.config(command=self.move_back_full)
         self.c.backBtn.config(command=self.move_back)
@@ -167,36 +167,62 @@ class App(object):
         self.parent.focus_force()
 
     #################################
+    # Chess tree controls complex
+    #################################
+    def ctc_update_display(self, has_parent, moves, variations):
+        self.c.update_display(has_parent, variations)
+        # make sure the appropriate tree node is selected based on the current move
+        # and the appropriate variation of the move is secondary selected
+        next_move = self.c.next_move_str.get()
+        self.ct.update_tree_selection(moves, next_move)
+
+    def ctc_make_tree(self, variations, tree_dict):
+        self.ct.make_tree(variations, tree_dict)
+
+    def ctc_close_all_but_current(self):
+        self.ct.open_all(False)
+
+    # when the next move menu changes, next_move_str changes bringing control to here.
+    # this routine updates the tree.
+    # we don't use the last three parameters
+    def ctc_next_move_str_trace(self, a, b, c):
+        if self.do_trace:
+            next_move = self.c.next_move_str.get()
+            print("*** from next_move_str_trace")
+            self.ct.update_tree_selection_2ndary(next_move)
+
+    def ctc_diddle_var(self, diddle):
+        san = self.c.next_move_str.get()
+        # a callback that calls the api
+        has_parent, variations = self.diddle_var(diddle, san)
+        self.ct.diddle_var_tree(diddle)
+        if diddle == 'remove':
+            san = ''
+        self.c.update_display(has_parent, variations, san)
+
+    def ctc_update_tree_node(self, node_str, moves):
+        self.ct.update_tree_node(node_str, moves)
+
+    def ctc_add_node_to_tree(self, move_str):
+        self.ct.add_node_to_tree(move_str)
+
+    def ctc_get_next_move_str(self):
+        return self.c.next_move_str.get()
+
+    #################################
     # Manipulates GUI
     #################################
     def update_display(self):
         self.bv.update(self.state["piece_distrib"], self.state["legal_moves"], self.state["turn"])
         self.cl.update_listing(self.state["moves"])
         self.update_ce()
-    
-        self.c.update_display(self.state["has_parent"], self.state["variations"])
-        # make sure the appropriate tree node is selected based on the current move
-        # and the appropriate variation of the move is secondary selected
-        next_move = self.c.next_move_str.get()
-        self.ct.update_tree_selection(self.state["moves"], next_move)
+        self.ctc_update_display(self.state["has_parent"], self.state["moves"], self.state["variations"])
 
     def make_tree(self):
         tree_dict = json.loads(
             chess_model_api_make_tree(json_state(self.state)))
-        self.ct.make_tree(self.state["variations"], tree_dict)
+        self.ctc_make_tree(self.state["variations"], tree_dict)
         self.update_display()
-
-    def close_all_but_current(self):
-        self.ct.open_all(False)
-
-    # when the next move menu changes, next_move_str changes bringing control to here.
-    # this routine updates the tree.
-    # we don't use the last three parameters
-    def next_move_str_trace(self, a, b, c):
-        if self.do_trace:
-            next_move = self.c.next_move_str.get()
-            print("*** from next_move_str_trace")
-            self.ct.update_tree_selection_2ndary(next_move)
 
     #################################
     # Fits pattern
@@ -205,33 +231,17 @@ class App(object):
     #################################
     # Change model, but not board state
     #################################
+    def diddle_var(self, diddle, san):
+        self.state, _ = chess_model_api_client('diddle_var', self.state, diddle=diddle, san=san)
+        return self.state["has_parent"], self.state["variations"]
+
     def set_player(self):
         # self.is_white is a control variable attached to the White/Black radio buttons
         is_white = self.is_white.get()
         self.bv.set_player(is_white)
         self.bv.update_display(self.state["piece_distrib"])
         self.state, _ = chess_model_api_client('set_headers', self.state, is_white=is_white)
-        self.ct.update_tree_node(self.state["root_node_str"], [])
-
-    def diddle_var(self, diddle):
-        san = self.c.next_move_str.get()
-        self.state, _ = chess_model_api_client('diddle_var', self.state, diddle=diddle, san=san)
-
-        self.ct.diddle_var_tree(diddle)
-        # 2/14/21 these two lines don't seem necessary, commented out
-        # quick check shows it still seems to work
-        # next_move_str = self.c.next_move_str.get()
-        # self.c.next_move_str.set(next_move_str)
-
-        # # self.c.update_display(self.state["has_parent"], self.state["variations"])
-        # if diddle == 'remove':
-        #     san = ''
-        # self.c.update_next_move_option_menu(self.state["variations"], san)
-        # if diddle == 'remove':
-        #     self.c.update_display(self.state["has_parent"], self.state["variations"])
-        if diddle == 'remove':
-            san = ''
-        self.c.update_display(self.state["has_parent"], self.state["variations"], san)
+        self.ctc_update_tree_node(self.state["root_node_str"], [])
 
     def load_pgn(self):
         # get filename
@@ -256,7 +266,7 @@ class App(object):
         if self.check_comment():
             self.state, _ = chess_model_api_client('move_to', self.state, moves=moves)
             self.update_display()
-            self.close_all_but_current()
+            self.ctc_close_all_but_current()
 
     # from tree click
     def move_to_tree_node(self, moves):
@@ -273,7 +283,7 @@ class App(object):
             move_str = outputs['move_str']
             if added:
                 # update the tree
-                self.ct.add_node_to_tree(move_str)
+                self.ctc_add_node_to_tree(move_str)
                 # update the option menu? not necessary, since we're about to leave
             self.state, _ = chess_model_api_client('move_frwd', self.state, san=san)
             self.update_display()
@@ -283,25 +293,25 @@ class App(object):
         if self.check_comment():
             self.state, _ = chess_model_api_client('move_back_full', self.state)
             self.update_display()
-            self.close_all_but_current()
+            self.ctc_close_all_but_current()
 
     def move_back(self):
         if self.check_comment():
             self.state, _ = chess_model_api_client('move_back', self.state)
             self.update_display()
-            self.close_all_but_current()
+            self.ctc_close_all_but_current()
 
     def move_frwd(self):
         if self.check_comment():
-            self.state, _ = chess_model_api_client('move_frwd', self.state, san=self.c.next_move_str.get())
+            self.state, _ = chess_model_api_client('move_frwd', self.state, san=self.ctc_get_next_move_str())
             self.update_display()
-            self.close_all_but_current()
+            self.ctc_close_all_but_current()
 
     def move_frwd_full(self):
         if self.check_comment():
             self.state, _ = chess_model_api_client('move_frwd_full', self.state)
             self.update_display()
-            self.close_all_but_current()
+            self.ctc_close_all_but_current()
 
     #################################
     # Comment editing (put elsewhere?)
@@ -365,7 +375,7 @@ class App(object):
         self.state, _ = chess_model_api_client('set_comment', self.state, comment=comment)
         self.ce.save_button.configure(state=tk.DISABLED)
         self.ce.editor.edit_modified(False)
-        self.ct.update_tree_node(self.state["node_str"], self.ce_tree_node_moves)
+        self.ctc_update_tree_node(self.state["node_str"], self.ce_tree_node_moves)
 
     def on_closing_comment_editor(self):
         self.ce_root.destroy()
