@@ -135,6 +135,12 @@ class App(object):
         #######################################
         self.ct = ChessTree(self.bottom, self.move_to_tree_node)
 
+        # initialize some variables
+        self.do_trace = True
+        # initialize separate comment editor window, which doesn't exist yet
+        self.ce_root = None
+        self.ce_tree_node = None
+
         #######################################
         # Create the chess model (cm)
         #######################################
@@ -143,12 +149,7 @@ class App(object):
         tree_dict = json.loads(
             chess_model_api_make_tree(json_state(self.state)))
         self.make_tree(tree_dict)
-
-        # initialize some variables
-        self.do_trace = True
-        # initialize separate comment editor window, which doesn't exist yet
-        self.ce_root = None
-        self.ce_tree_node = None
+        self.update_display()
 
     #################################
     # Starting stopping and saving
@@ -159,9 +160,9 @@ class App(object):
             self.ce_root.destroy()
         self.parent.destroy()
 
-    def run(self):
-        self.update_display()
-        tk.mainloop()
+    # def run(self):
+    #     self.update_display()
+    #     tk.mainloop()
 
     def save_pgn(self):
         # get filename
@@ -390,4 +391,5 @@ class App(object):
 if __name__ == "__main__":
     the_parent = tk.Tk()
     app = App(the_parent)
-    app.run()
+    # app.run()
+    tk.mainloop()
