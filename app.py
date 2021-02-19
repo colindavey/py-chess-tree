@@ -54,25 +54,38 @@ class App(object):
         # be prepared to close the tree window when closing main window
         self.parent.protocol("WM_DELETE_WINDOW", self.on_closing)
 
+        # top has board and listing/other
         self.top = tk.Frame(self.parent)
         # self.top.pack(side=TOP, fill=BOTH, expand=True)
         # self.top.pack(side=TOP, fill=BOTH)
         self.top.pack(side=tk.TOP)
 
+        # board view
         self.left = tk.Frame(self.top)
         # self.left.pack(side=tk.LEFT, fill=BOTH, expand=True)
         self.left.pack(side=tk.LEFT)
 
-        # start of right frame for vertical listing
+        # right frame for vertical listing and other controls
         self.right = tk.Frame(self.top)
         self.right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
+        # load/save
         self.right_top = tk.Frame(self.right)
         self.right_top.pack(side=tk.TOP)
         
+        # W/B radio buttons
         self.right_top2 = tk.Frame(self.right)
         self.right_top2.pack(side=tk.TOP)
 
+        # Listing
+        self.right_main = tk.Frame(self.right)
+        self.right_main.pack(side=tk.TOP)
+
+        # Test
+        self.right_bottom = tk.Frame(self.right)
+        self.right_bottom.pack(side=tk.BOTTOM)
+
+        # tree
         self.bottom = tk.Frame(self.parent)
         self.bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
 
@@ -109,6 +122,30 @@ class App(object):
         # self.cl = tk.Label(self.right, text='Game listing will go here.', bg='#eee')
         # self.cl.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         self.cl = ChessListing(self.right, self.move_to_cl)
+
+        #######################################
+        # Create the chess listing (cl)
+        #######################################
+        # self.testloadBtn = tk.Button(self.right_bottom, text="Load")
+        # self.testloadBtn.pack(side=tk.LEFT)
+        # self.testloadBtn.config(command=self.load_pgn)
+
+        # self.testsaveBtn = tk.Button(self.right_bottom, text="Save")
+        # self.testsaveBtn.pack(side=tk.LEFT)
+        # self.testsaveBtn.config(command=self.save_pgn)
+
+        self.backFullBtn = tk.Button(self.right_bottom, text="|<")
+        self.backFullBtn.pack(side=tk.LEFT)
+
+        self.backBtn = tk.Button(self.right_bottom, text="<")
+        self.backBtn.pack(side=tk.LEFT)
+
+        self.frwdBtn = tk.Button(self.right_bottom, text=">")
+        self.frwdBtn.pack(side=tk.LEFT)
+
+        self.frwdFullBtn = tk.Button(self.right_bottom, text=">|")
+        self.frwdFullBtn.pack(side=tk.LEFT)
+
 
         #######################################
         # Create the controls (c)

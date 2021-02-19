@@ -13,12 +13,12 @@ class ChessListing(tk.Frame):
         self.pack()
 
         self.table['columns'] = ('w', 'b')
-        self.table.heading("#0", text='#', anchor='center')
+        self.table.heading("#0", text='#', anchor='w')
         self.table.column("#0", width=5)
         self.table.heading('w', text='W')
-        self.table.column('w', anchor='center', width=12)
+        self.table.column('w', anchor='w', width=12)
         self.table.heading('b', text='B')
-        self.table.column('b', anchor='center', width=12)
+        self.table.column('b', anchor='w', width=12)
         self.table.configure(selectmode='none')
 
         self.move_to_cb = move_to_cb
