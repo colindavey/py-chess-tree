@@ -81,13 +81,23 @@ class App(object):
         self.right_main = tk.Frame(self.right)
         self.right_main.pack(side=tk.TOP)
 
-        # Test
+        # Video control buttons
         self.right_bottom = tk.Frame(self.right)
         self.right_bottom.pack(side=tk.BOTTOM)
 
-        # tree
+        # tree complex
         self.bottom = tk.Frame(self.parent)
-        self.bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+        # self.bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+        self.bottom.pack(side=tk.BOTTOM)
+
+        # # tree
+        # self.bottom_left = tk.Frame(self.bottom)
+        # # self.left.pack(side=tk.LEFT, fill=BOTH, expand=True)
+        # self.bottom_left.pack(side=tk.LEFT)
+
+        # # next table
+        # self.bottom_right = tk.Frame(self.bottom)
+        # self.bottom_right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         #######################################
         # Create the board view (bv)
@@ -171,6 +181,7 @@ class App(object):
         #######################################
         # Create the chess tree (ct)
         #######################################
+        # self.ct = ChessTree(self.bottom_left, self.move_to_tree_node)
         self.ct = ChessTree(self.bottom, self.move_to_tree_node)
 
         # initialize some variables
