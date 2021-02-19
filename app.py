@@ -86,19 +86,22 @@ class App(object):
         #######################################
         self.loadBtn = tk.Button(self.right_top, text="Load")
         self.loadBtn.pack(side=tk.LEFT)
+        self.loadBtn.config(command=self.load_pgn)
+
         self.saveBtn = tk.Button(self.right_top, text="Save")
         self.saveBtn.pack(side=tk.LEFT)
-
-        self.loadBtn.config(command=self.load_pgn)
         self.saveBtn.config(command=self.save_pgn)
 
         self.is_white = tk.IntVar()
         self.is_white.set(is_white)
-
-        self.rb_w = tk.Radiobutton(self.right_top2, text="White", variable=self.is_white, value=1, command=self.set_player)
+        self.rb_w = tk.Radiobutton(self.right_top2, text="W", variable=self.is_white, value=1, command=self.set_player)
         self.rb_w.pack(side=tk.LEFT)
-        self.rb_b = tk.Radiobutton(self.right_top2, text="Black", variable=self.is_white, value=0, command=self.set_player)
+        self.rb_b = tk.Radiobutton(self.right_top2, text="B", variable=self.is_white, value=0, command=self.set_player)
         self.rb_b.pack(side=tk.LEFT)
+
+        self.commentBtn = tk.Button(self.right_top2, text="{}")
+        self.commentBtn.pack(side=tk.LEFT)
+        self.commentBtn.config(command=self.handle_comment_button)
 
         #######################################
         # Create the chess listing (cl)
@@ -127,8 +130,6 @@ class App(object):
         self.c.backBtn.config(command=self.move_back)
         self.c.frwdBtn.config(command=self.move_frwd)
         self.c.frwdFullBtn.config(command=self.move_frwd_full)
-
-        self.c.commentBtn.config(command=self.handle_comment_button)
         
         #######################################
         # Create the chess tree (ct)
@@ -169,6 +170,7 @@ class App(object):
     #################################
     # Chess tree controls complex
     #################################
+    # Controls and Tree
     def ctc_update_display(self, has_parent, moves, variations):
         self.c.update_display(has_parent, variations)
         # make sure the appropriate tree node is selected based on the current move
@@ -176,21 +178,7 @@ class App(object):
         next_move = self.c.next_move_str.get()
         self.ct.update_tree_selection(moves, next_move)
 
-    def ctc_make_tree(self, variations, tree_dict):
-        self.ct.make_tree(variations, tree_dict)
-
-    def ctc_open_all(self, value):
-        self.ct.open_all(value)
-
-    # when the next move menu changes, next_move_str changes bringing control to here.
-    # this routine updates the tree.
-    # we don't use the last three parameters
-    def ctc_next_move_str_trace(self, a, b, c):
-        if self.do_trace:
-            next_move = self.c.next_move_str.get()
-            print("*** from next_move_str_trace")
-            self.ct.update_tree_selection_2ndary(next_move)
-
+    # Controls and Tree
     def ctc_diddle_var(self, diddle):
         san = self.c.next_move_str.get()
         # a callback that calls the api
@@ -200,12 +188,33 @@ class App(object):
             san = ''
         self.c.update_display(has_parent, variations, san)
 
+    # Controls and Tree
+    # when the next move menu changes, next_move_str changes bringing control to here.
+    # this routine updates the tree.
+    # we don't use the last three parameters
+    def ctc_next_move_str_trace(self, a, b, c):
+        if self.do_trace:
+            next_move = self.c.next_move_str.get()
+            print("*** from next_move_str_trace")
+            self.ct.update_tree_selection_2ndary(next_move)
+
+    # Tree
+    def ctc_make_tree(self, variations, tree_dict):
+        self.ct.make_tree(variations, tree_dict)
+
+    # Tree
+    def ctc_open_all(self, value):
+        self.ct.open_all(value)
+
+    # Tree
     def ctc_update_tree_node(self, node_str, moves):
         self.ct.update_tree_node(node_str, moves)
 
+    # Tree
     def ctc_add_node_to_tree(self, move_str):
         self.ct.add_node_to_tree(move_str)
 
+    # Controls
     def ctc_get_next_move_str(self):
         return self.c.next_move_str.get()
 

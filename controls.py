@@ -49,8 +49,8 @@ class Controls(tk.Frame):
         self.frwdFullBtn = tk.Button(self, text=">|")
         self.frwdFullBtn.pack(side=tk.LEFT)
 
-        self.commentBtn = tk.Button(self, text="{}")
-        self.commentBtn.pack(side=tk.LEFT)
+        # self.commentBtn = tk.Button(self, text="{}")
+        # self.commentBtn.pack(side=tk.LEFT)
 
         self.pack()
 
