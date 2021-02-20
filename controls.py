@@ -80,11 +80,18 @@ class Controls(tk.Frame):
         self.table.configure(selectmode='browse')
         self.table.insert('', 'end', text='one', values='two')
         self.table.insert('', 'end', text='three', values='four')
+        self.table.bind("<Button-1>", self.handle_click)
 
         # self.table.column("#0", width=0)
         # self.table.column("next", width=12)
         # self.table.column("comment", width=12)
         self.pack()
+
+    def handle_click(self, event):
+        clickedRow = self.table.identify_row(event.y)
+        values = self.table.item(clickedRow, 'values')
+        text = self.table.item(clickedRow, 'text')
+        print(values, text)
 
     def update_display(self, has_parent, variations, next_move_str=''):
         self.update_next_move_option_menu(variations, next_move_str)
