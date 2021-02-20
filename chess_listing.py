@@ -25,8 +25,9 @@ class ChessListing(tk.Frame):
         self.table.bind("<Button-1>", self.handle_click)
 
     def update_listing(self, moves):
-        children = self.table.get_children('')
-        for child in children:
+        # children = self.table.get_children('')
+        # for child in children:
+        for child in self.table.get_children(''):
             self.table.delete(child)
         for p in range(0, len(moves), 2):
             wm = moves[p]

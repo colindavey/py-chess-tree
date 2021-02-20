@@ -1,10 +1,11 @@
 # /usr/bin/python
 
 import tkinter as tk
+import tkinter.ttk as tktree
 
 class Controls(tk.Frame):
-    def __init__(self, parent=None):
-        tk.Frame.__init__(self, parent)
+    def __init__(self, button_parent, table_parent):
+        tk.Frame.__init__(self, button_parent, table_parent)
 
         self.closeBtn = tk.Button(self, text="C")
         self.closeBtn.pack(side=tk.LEFT)
@@ -49,9 +50,40 @@ class Controls(tk.Frame):
         self.frwdFullBtn = tk.Button(self, text=">|")
         self.frwdFullBtn.pack(side=tk.LEFT)
 
-        # self.commentBtn = tk.Button(self, text="{}")
-        # self.commentBtn.pack(side=tk.LEFT)
+        # show="tree" turns off the heading
+        self.table = tktree.Treeview(table_parent, show="tree")
+        # self.table = tktree.Treeview(table_parent)
+        ysb = tktree.Scrollbar(table_parent, orient='vertical', command=self.table.yview)
+        self.table.configure(yscroll=ysb.set)
+        ysb.pack(side=tk.RIGHT, fill=tk.Y)
+        self.table.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
 
+        # self.table['columns'] = ('w', 'b')
+        # self.table.heading("#0", text='#', anchor='w')
+        # self.table.column("#0", width=5)
+        # self.table.heading('w', text='W')
+        # self.table.column('w', anchor='w', width=12)
+        # self.table.heading('b', text='B')
+        # self.table.column('b', anchor='w', width=12)
+        # self.table.configure(selectmode='none')
+
+        self.table['columns'] = ('move')
+        self.table['displaycolumns'] = ('')
+        # self.table['displaycolumns'] = ('next', 'comment')
+        # self.table.heading("#0", text='Move', anchor='w')
+        self.table.column("#0", width=100, stretch=tk.NO)
+        # self.table.heading('#1', text='Comment')
+        self.table.column('move', anchor='w', width=100, stretch=tk.NO)
+        # self.table.heading('#2', text='B')
+        # self.table.column('#2', anchor='w', width=3)
+        # self.table.configure(selectmode='none')
+        self.table.configure(selectmode='browse')
+        self.table.insert('', 'end', text='one', values='two')
+        self.table.insert('', 'end', text='three', values='four')
+
+        # self.table.column("#0", width=0)
+        # self.table.column("next", width=12)
+        # self.table.column("comment", width=12)
         self.pack()
 
     def update_display(self, has_parent, variations, next_move_str=''):
@@ -144,3 +176,7 @@ class Controls(tk.Frame):
         #     self.nextMoveOMen['menu'].add_command(label='<none>')
         #     self.next_move_str.set('')
 
+        for child in self.table.get_children(''):
+            self.table.delete(child)
+        for variation in variations:
+            self.table.insert('', 'end', text=variation, values=variation)

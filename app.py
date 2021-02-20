@@ -86,18 +86,22 @@ class App(object):
         self.right_bottom.pack(side=tk.BOTTOM)
 
         # tree complex
+        # self.bottom = tk.Frame(self.parent)
+        # # self.bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+        # self.bottom.pack(side=tk.BOTTOM)
         self.bottom = tk.Frame(self.parent)
-        # self.bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
-        self.bottom.pack(side=tk.BOTTOM)
+        self.bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
 
-        # # tree
-        # self.bottom_left = tk.Frame(self.bottom)
-        # # self.left.pack(side=tk.LEFT, fill=BOTH, expand=True)
-        # self.bottom_left.pack(side=tk.LEFT)
+        # tree
+        self.bottom_left = tk.Frame(self.bottom)
+        # self.left.pack(side=tk.LEFT, fill=BOTH, expand=True)
+        self.bottom_left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # # next table
-        # self.bottom_right = tk.Frame(self.bottom)
+        self.bottom_right = tk.Frame(self.bottom)
         # self.bottom_right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # self.bottom_right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.bottom_right.pack(side=tk.LEFT)
 
         #######################################
         # Create the board view (bv)
@@ -161,7 +165,7 @@ class App(object):
         # Create the controls (c)
         #######################################
         # self.c = Controls(self.parent)
-        self.c = Controls(self.left)
+        self.c = Controls(self.left, self.bottom_right)
         self.c.next_move_str.trace('w', self.ctc_next_move_str_trace)
 
         # Configure controls
@@ -181,8 +185,8 @@ class App(object):
         #######################################
         # Create the chess tree (ct)
         #######################################
-        # self.ct = ChessTree(self.bottom_left, self.move_to_tree_node)
-        self.ct = ChessTree(self.bottom, self.move_to_tree_node)
+        self.ct = ChessTree(self.bottom_left, self.move_to_tree_node)
+        # self.ct = ChessTree(self.bottom, self.move_to_tree_node)
 
         # initialize some variables
         self.do_trace = True
