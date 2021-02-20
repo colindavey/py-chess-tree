@@ -160,12 +160,16 @@ class App(object):
         self.frwdFullBtn = tk.Button(self.right_bottom, text=">|")
         self.frwdFullBtn.pack(side=tk.LEFT)
 
+        self.backFullBtn.config(command=self.move_back_full)
+        self.backBtn.config(command=self.move_back)
+        self.frwdBtn.config(command=self.move_frwd)
+        self.frwdFullBtn.config(command=self.move_frwd_full)
 
         #######################################
         # Create the controls (c)
         #######################################
         # self.c = Controls(self.parent)
-        self.c = Controls(self.left, self.bottom_right)
+        self.c = Controls(self.left, self.bottom_right, self.backFullBtn, self.backBtn, self.frwdBtn, self.frwdFullBtn)
         self.c.next_move_str.trace('w', self.ctc_next_move_str_trace)
 
         # Configure controls
@@ -177,11 +181,6 @@ class App(object):
         self.c.promoteVarBtn.config(command=lambda: self.ctc_diddle_var('promote'))
         self.c.demoteVarBtn.config(command=lambda: self.ctc_diddle_var('demote'))
 
-        self.c.backFullBtn.config(command=self.move_back_full)
-        self.c.backBtn.config(command=self.move_back)
-        self.c.frwdBtn.config(command=self.move_frwd)
-        self.c.frwdFullBtn.config(command=self.move_frwd_full)
-        
         #######################################
         # Create the chess tree (ct)
         #######################################
@@ -245,10 +244,6 @@ class App(object):
     # this routine updates the tree.
     # we don't use the last three parameters
     def ctc_next_move_str_trace(self, a, b, c):
-        # if self.do_trace:
-        #     next_move = self.c.next_move_str.get()
-        #     print("*** from next_move_str_trace")
-        #     self.ct.update_tree_selection_2ndary(next_move)
         next_move = self.c.next_move_str.get()
         print("*** from next_move_str_trace")
         self.ct.update_tree_selection_2ndary(next_move)
