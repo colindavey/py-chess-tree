@@ -60,12 +60,18 @@ class Controls(tk.Frame):
     
         self.pack()
 
+    ###################################
+    # User input
+    ###################################
     def handle_click(self, event):
         clickedRow = self.table.identify_row(event.y)
         values = self.table.item(clickedRow, 'values')
         text = self.table.item(clickedRow, 'text')
         print(values, text)
 
+    ###################################
+    # Public
+    ###################################
     def update_display(self, has_parent, variations, next_move_str=''):
         self.update_next_move_option_menu(variations, next_move_str)
         print('update_display', variations)

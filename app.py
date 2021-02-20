@@ -7,7 +7,7 @@ import tkinter.filedialog as tkfiledialog
 
 from comment_editor import CommentEditor
 from board_view import BoardView
-from controls import Controls
+# from controls import Controls
 from chess_listing import ChessListing
 from chess_tree import ChessTree
 
@@ -166,26 +166,32 @@ class App(object):
         self.frwdFullBtn.config(command=self.move_frwd_full)
 
         #######################################
+        # Create the chess tree (ct)
+        #######################################
+        #######################################
         # Create the controls (c)
         #######################################
         # self.c = Controls(self.parent)
-        self.c = Controls(self.left, self.bottom_right, self.backFullBtn, self.backBtn, self.frwdBtn, self.frwdFullBtn)
-        self.c.next_move_str.trace('w', self.ctc_next_move_str_trace)
+        self.ct = ChessTree(self.bottom_left, self.move_to_tree_node,
+            self.left, self.bottom_right, self.backFullBtn, self.backBtn, self.frwdBtn, self.frwdFullBtn)
+
+        # self.c = Controls(self.left, self.bottom_right, self.backFullBtn, self.backBtn, self.frwdBtn, self.frwdFullBtn)
+        self.ct.next_move_str.trace('w', self.ctc_next_move_str_trace)
 
         # Configure controls
-        self.c.openBtn.config(command=lambda: self.ctc_open_all(True))
-        self.c.closeBtn.config(command=lambda: self.ctc_open_all(False))
+        self.ct.openBtn.config(command=lambda: self.ctc_open_all(True))
+        self.ct.closeBtn.config(command=lambda: self.ctc_open_all(False))
 
-        self.c.removeVarBtn.config(command=lambda: self.ctc_diddle_var('remove'))
-        self.c.promote2MainVarBtn.config(command=lambda: self.ctc_diddle_var('promote2main'))
-        self.c.promoteVarBtn.config(command=lambda: self.ctc_diddle_var('promote'))
-        self.c.demoteVarBtn.config(command=lambda: self.ctc_diddle_var('demote'))
+        self.ct.removeVarBtn.config(command=lambda: self.ctc_diddle_var('remove'))
+        self.ct.promote2MainVarBtn.config(command=lambda: self.ctc_diddle_var('promote2main'))
+        self.ct.promoteVarBtn.config(command=lambda: self.ctc_diddle_var('promote'))
+        self.ct.demoteVarBtn.config(command=lambda: self.ctc_diddle_var('demote'))
 
         #######################################
         # Create the chess tree (ct)
         #######################################
-        self.ct = ChessTree(self.bottom_left, self.move_to_tree_node)
-        # self.ct = ChessTree(self.bottom, self.move_to_tree_node)
+        # self.ct = ChessTree(self.bottom_left, self.move_to_tree_node)
+        # # self.ct = ChessTree(self.bottom, self.move_to_tree_node)
 
         # initialize some variables
         # self.do_trace = True
@@ -223,28 +229,28 @@ class App(object):
     #################################
     # Controls and Tree
     def ctc_update_display(self, has_parent, moves, variations):
-        self.c.update_display(has_parent, variations)
+        self.ct.update_display(has_parent, variations)
         # make sure the appropriate tree node is selected based on the current move
         # and the appropriate variation of the move is secondary selected
-        next_move = self.c.next_move_str.get()
+        next_move = self.ct.next_move_str.get()
         self.ct.update_tree_selection(moves, next_move)
 
     # Controls and Tree
     def ctc_diddle_var(self, diddle):
-        san = self.c.next_move_str.get()
+        san = self.ct.next_move_str.get()
         # a callback that calls the api
         has_parent, variations = self.diddle_var(diddle, san)
         self.ct.diddle_var_tree(diddle)
         if diddle == 'remove':
             san = ''
-        self.c.update_display(has_parent, variations, san)
+        self.ct.update_display(has_parent, variations, san)
 
     # Controls and Tree
     # when the next move menu changes, next_move_str changes bringing control to here.
     # this routine updates the tree.
     # we don't use the last three parameters
     def ctc_next_move_str_trace(self, a, b, c):
-        next_move = self.c.next_move_str.get()
+        next_move = self.ct.next_move_str.get()
         print("*** from next_move_str_trace")
         self.ct.update_tree_selection_2ndary(next_move)
 
@@ -266,7 +272,7 @@ class App(object):
 
     # Controls
     def ctc_get_next_move_str(self):
-        return self.c.next_move_str.get()
+        return self.ct.next_move_str.get()
 
     #################################
     # Manipulates GUI
