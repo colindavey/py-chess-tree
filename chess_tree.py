@@ -16,6 +16,9 @@ class ChessTree(tk.Frame):
         # tk.Frame.__init__(self, button_parent)
         tk.Frame.__init__(self, tree_parent)
 
+        ####################################
+        # Buttons
+        ####################################
         self.backFullBtn = backFullBtn
         self.backBtn = backBtn
         self.frwdBtn = frwdBtn
@@ -312,11 +315,7 @@ class ChessTree(tk.Frame):
             print("*** from make_tree")
             self.update_tree_selection_2ndary(variations[0])
 
-    # def update_tree_node(self, str, selected_node):
-    #     self.tree.item(selected_node, text=str)
     def update_tree_node(self, str, moves):
-        # selected_node = self.get_node_from_moves(moves)
-        # self.tree.item(selected_node, text=str)
         self.tree.item(self.get_node_from_moves(moves), text=str)
 
     def update_tree_selection(self, moves, next_move):

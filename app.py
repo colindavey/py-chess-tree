@@ -166,36 +166,12 @@ class App(object):
         self.frwdFullBtn.config(command=self.move_frwd_full)
 
         #######################################
-        # Create the chess tree (ct)
+        # Create the chess tree (ct) and controls
         #######################################
-        #######################################
-        # Create the controls (c)
-        #######################################
-        # self.c = Controls(self.parent)
         self.ct = ChessTree(self.bottom_left, self.move_to_tree_node,
             self.left, self.bottom_right, self.backFullBtn, self.backBtn, self.frwdBtn, self.frwdFullBtn,
             self.diddle_var)
-        # self.c = Controls(self.left, self.bottom_right, self.backFullBtn, self.backBtn, self.frwdBtn, self.frwdFullBtn)
 
-        # self.ct.next_move_str.trace('w', self.ctc_next_move_str_trace)
-
-        # # Configure controls
-        # self.ct.openBtn.config(command=lambda: self.ctc_open_all(True))
-        # self.ct.closeBtn.config(command=lambda: self.ctc_open_all(False))
-
-        # self.ct.removeVarBtn.config(command=lambda: self.ctc_diddle_var('remove'))
-        # self.ct.promote2MainVarBtn.config(command=lambda: self.ctc_diddle_var('promote2main'))
-        # self.ct.promoteVarBtn.config(command=lambda: self.ctc_diddle_var('promote'))
-        # self.ct.demoteVarBtn.config(command=lambda: self.ctc_diddle_var('demote'))
-
-        #######################################
-        # Create the chess tree (ct)
-        #######################################
-        # self.ct = ChessTree(self.bottom_left, self.move_to_tree_node)
-        # # self.ct = ChessTree(self.bottom, self.move_to_tree_node)
-
-        # initialize some variables
-        # self.do_trace = True
         # initialize separate comment editor window, which doesn't exist yet
         self.ce_root = None
         self.ce_tree_node_moves = None
