@@ -7,7 +7,6 @@ import tkinter.filedialog as tkfiledialog
 
 from comment_editor import CommentEditor
 from board_view import BoardView
-# from controls import Controls
 from chess_listing import ChessListing
 from chess_tree import ChessTree
 
@@ -86,20 +85,16 @@ class App(object):
         self.right_bottom.pack(side=tk.BOTTOM)
 
         # tree complex
-        # self.bottom = tk.Frame(self.parent)
-        # # self.bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
-        # self.bottom.pack(side=tk.BOTTOM)
         self.bottom = tk.Frame(self.parent)
+        # self.bottom.pack(side=tk.BOTTOM)
         self.bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
 
         # tree
         self.bottom_left = tk.Frame(self.bottom)
-        # self.left.pack(side=tk.LEFT, fill=BOTH, expand=True)
         self.bottom_left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # # next table
         self.bottom_right = tk.Frame(self.bottom)
-        # self.bottom_right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         # self.bottom_right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.bottom_right.pack(side=tk.LEFT)
 
@@ -133,21 +128,11 @@ class App(object):
         #######################################
         # Create the chess listing (cl)
         #######################################
-        # self.cl = tk.Label(self.right, text='Game listing will go here.', bg='#eee')
-        # self.cl.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         self.cl = ChessListing(self.right, self.move_to_cl)
 
         #######################################
-        # Create the chess listing (cl)
+        # Create the "video buttons"
         #######################################
-        # self.testloadBtn = tk.Button(self.right_bottom, text="Load")
-        # self.testloadBtn.pack(side=tk.LEFT)
-        # self.testloadBtn.config(command=self.load_pgn)
-
-        # self.testsaveBtn = tk.Button(self.right_bottom, text="Save")
-        # self.testsaveBtn.pack(side=tk.LEFT)
-        # self.testsaveBtn.config(command=self.save_pgn)
-
         self.backFullBtn = tk.Button(self.right_bottom, text="|<")
         self.backFullBtn.pack(side=tk.LEFT)
 
