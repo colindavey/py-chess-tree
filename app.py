@@ -173,19 +173,20 @@ class App(object):
         #######################################
         # self.c = Controls(self.parent)
         self.ct = ChessTree(self.bottom_left, self.move_to_tree_node,
-            self.left, self.bottom_right, self.backFullBtn, self.backBtn, self.frwdBtn, self.frwdFullBtn)
-
+            self.left, self.bottom_right, self.backFullBtn, self.backBtn, self.frwdBtn, self.frwdFullBtn,
+            self.diddle_var)
         # self.c = Controls(self.left, self.bottom_right, self.backFullBtn, self.backBtn, self.frwdBtn, self.frwdFullBtn)
-        self.ct.next_move_str.trace('w', self.ctc_next_move_str_trace)
 
-        # Configure controls
-        self.ct.openBtn.config(command=lambda: self.ctc_open_all(True))
-        self.ct.closeBtn.config(command=lambda: self.ctc_open_all(False))
+        # self.ct.next_move_str.trace('w', self.ctc_next_move_str_trace)
 
-        self.ct.removeVarBtn.config(command=lambda: self.ctc_diddle_var('remove'))
-        self.ct.promote2MainVarBtn.config(command=lambda: self.ctc_diddle_var('promote2main'))
-        self.ct.promoteVarBtn.config(command=lambda: self.ctc_diddle_var('promote'))
-        self.ct.demoteVarBtn.config(command=lambda: self.ctc_diddle_var('demote'))
+        # # Configure controls
+        # self.ct.openBtn.config(command=lambda: self.ctc_open_all(True))
+        # self.ct.closeBtn.config(command=lambda: self.ctc_open_all(False))
+
+        # self.ct.removeVarBtn.config(command=lambda: self.ctc_diddle_var('remove'))
+        # self.ct.promote2MainVarBtn.config(command=lambda: self.ctc_diddle_var('promote2main'))
+        # self.ct.promoteVarBtn.config(command=lambda: self.ctc_diddle_var('promote'))
+        # self.ct.demoteVarBtn.config(command=lambda: self.ctc_diddle_var('demote'))
 
         #######################################
         # Create the chess tree (ct)
@@ -224,69 +225,19 @@ class App(object):
             f.close()
         self.parent.focus_force()
 
-    #################################
-    # Chess tree controls complex
-    #################################
-    # Controls and Tree
-    def ctc_update_display(self, has_parent, moves, variations):
-        self.ct.update_display(has_parent, variations)
-        # make sure the appropriate tree node is selected based on the current move
-        # and the appropriate variation of the move is secondary selected
-        next_move = self.ct.next_move_str.get()
-        self.ct.update_tree_selection(moves, next_move)
-
-    # Controls and Tree
-    def ctc_diddle_var(self, diddle):
-        san = self.ct.next_move_str.get()
-        # a callback that calls the api
-        has_parent, variations = self.diddle_var(diddle, san)
-        self.ct.diddle_var_tree(diddle)
-        if diddle == 'remove':
-            san = ''
-        self.ct.update_display(has_parent, variations, san)
-
-    # Controls and Tree
-    # when the next move menu changes, next_move_str changes bringing control to here.
-    # this routine updates the tree.
-    # we don't use the last three parameters
-    def ctc_next_move_str_trace(self, a, b, c):
-        next_move = self.ct.next_move_str.get()
-        print("*** from next_move_str_trace")
-        self.ct.update_tree_selection_2ndary(next_move)
-
-    # Tree
-    def ctc_make_tree(self, variations, tree_dict):
-        self.ct.make_tree(variations, tree_dict)
-
-    # Tree
-    def ctc_open_all(self, value):
-        self.ct.open_all(value)
-
-    # Tree
-    def ctc_update_tree_node(self, node_str, moves):
-        self.ct.update_tree_node(node_str, moves)
-
-    # Tree
-    def ctc_add_node_to_tree(self, move_str):
-        self.ct.add_node_to_tree(move_str)
-
-    # Controls
-    def ctc_get_next_move_str(self):
-        return self.ct.next_move_str.get()
-
-    #################################
+   #################################
     # Manipulates GUI
     #################################
     def update_display(self):
         self.bv.update(self.state["piece_distrib"], self.state["legal_moves"], self.state["turn"])
         self.cl.update_listing(self.state["moves"])
         self.update_ce()
-        self.ctc_update_display(self.state["has_parent"], self.state["moves"], self.state["variations"])
+        self.ct.ctc_update_display(self.state["has_parent"], self.state["moves"], self.state["variations"])
 
     def make_tree(self):
         tree_dict = json.loads(
             chess_model_api_make_tree(json_state(self.state)))
-        self.ctc_make_tree(self.state["variations"], tree_dict)
+        self.ct.ctc_make_tree(self.state["variations"], tree_dict)
         self.update_display()
 
     #################################
@@ -306,7 +257,7 @@ class App(object):
         self.bv.set_player(is_white)
         self.bv.update_display(self.state["piece_distrib"])
         self.state, _ = chess_model_api_client('set_headers', self.state, is_white=is_white)
-        self.ctc_update_tree_node(self.state["root_node_str"], [])
+        self.ct.ctc_update_tree_node(self.state["root_node_str"], [])
 
     def load_pgn(self):
         # get filename
@@ -331,7 +282,7 @@ class App(object):
         if self.check_comment():
             self.state, _ = chess_model_api_client('move_to', self.state, moves=moves)
             self.update_display()
-            self.ctc_open_all(False)
+            self.ct.ctc_open_all(False)
 
     # from tree click
     def move_to_tree_node(self, moves):
@@ -348,7 +299,7 @@ class App(object):
             move_str = outputs['move_str']
             if added:
                 # update the tree
-                self.ctc_add_node_to_tree(move_str)
+                self.ct.ctc_add_node_to_tree(move_str)
                 # update the option menu? not necessary, since we're about to leave
             self.state, _ = chess_model_api_client('move_frwd', self.state, san=san)
             self.update_display()
@@ -358,25 +309,25 @@ class App(object):
         if self.check_comment():
             self.state, _ = chess_model_api_client('move_back_full', self.state)
             self.update_display()
-            self.ctc_open_all(False)
+            self.ct.ctc_open_all(False)
 
     def move_back(self):
         if self.check_comment():
             self.state, _ = chess_model_api_client('move_back', self.state)
             self.update_display()
-            self.ctc_open_all(False)
+            self.ct.ctc_open_all(False)
 
     def move_frwd(self):
         if self.check_comment():
-            self.state, _ = chess_model_api_client('move_frwd', self.state, san=self.ctc_get_next_move_str())
+            self.state, _ = chess_model_api_client('move_frwd', self.state, san=self.ct.ctc_get_next_move_str())
             self.update_display()
-            self.ctc_open_all(False)
+            self.ct.ctc_open_all(False)
 
     def move_frwd_full(self):
         if self.check_comment():
             self.state, _ = chess_model_api_client('move_frwd_full', self.state)
             self.update_display()
-            self.ctc_open_all(False)
+            self.ct.ctc_open_all(False)
 
     #################################
     # Comment editing (put elsewhere?)
@@ -440,7 +391,7 @@ class App(object):
         self.state, _ = chess_model_api_client('set_comment', self.state, comment=comment)
         self.ce.save_button.configure(state=tk.DISABLED)
         self.ce.editor.edit_modified(False)
-        self.ctc_update_tree_node(self.state["node_str"], self.ce_tree_node_moves)
+        self.ct.ctc_update_tree_node(self.state["node_str"], self.ce_tree_node_moves)
 
     def on_closing_comment_editor(self):
         self.ce_root.destroy()
