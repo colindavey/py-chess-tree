@@ -189,7 +189,7 @@ class App(object):
         # self.ct = ChessTree(self.bottom, self.move_to_tree_node)
 
         # initialize some variables
-        self.do_trace = True
+        # self.do_trace = True
         # initialize separate comment editor window, which doesn't exist yet
         self.ce_root = None
         self.ce_tree_node_moves = None
@@ -245,10 +245,13 @@ class App(object):
     # this routine updates the tree.
     # we don't use the last three parameters
     def ctc_next_move_str_trace(self, a, b, c):
-        if self.do_trace:
-            next_move = self.c.next_move_str.get()
-            print("*** from next_move_str_trace")
-            self.ct.update_tree_selection_2ndary(next_move)
+        # if self.do_trace:
+        #     next_move = self.c.next_move_str.get()
+        #     print("*** from next_move_str_trace")
+        #     self.ct.update_tree_selection_2ndary(next_move)
+        next_move = self.c.next_move_str.get()
+        print("*** from next_move_str_trace")
+        self.ct.update_tree_selection_2ndary(next_move)
 
     # Tree
     def ctc_make_tree(self, variations, tree_dict):
