@@ -527,4 +527,7 @@ class ChessTree(tk.Frame):
             # self.tree.column('#0', minwidth=520)
 
     def get_next_move_str(self):
-        return self.next_move_ctrl_str.get()
+        next_move_table = self.table.item(self.table.selection(), 'text')
+        next_move_menu = self.next_move_ctrl_str.get()
+        print('*****get_next_move_str', next_move_table, next_move_table, next_move_table==next_move_table)
+        return next_move_menu
