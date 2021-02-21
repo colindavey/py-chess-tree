@@ -33,13 +33,13 @@ class ChessTree(tk.Frame):
         self.openBtn.pack(side=tk.LEFT)
         self.openBtn.config(command=lambda: self.ctc_open_all(True))
 
-        # next_move_str is a tk "control variable"
+        # next_move_ctrl_str is a tk "control variable"
         # see http://effbot.org/tkinterbook/variable.htm
         # http://stackoverflow.com/questions/3876229/how-to-run-a-code-whenever-a-tkinter-widget-value-changes/3883495#3883495
-        self.next_move_str = tk.StringVar(button_parent)
-        self.next_move_str.trace('w', self.ctc_next_move_str_trace)
+        self.next_move_ctrl_str = tk.StringVar(button_parent)
+        self.next_move_ctrl_str.trace('w', self.ctc_next_move_str_trace)
 
-        self.nextMoveOMen = tk.OptionMenu(button_parent, self.next_move_str, [])
+        self.nextMoveOMen = tk.OptionMenu(button_parent, self.next_move_ctrl_str, [])
         # self.nextMoveOMen.config(width=7)
         self.nextMoveOMen.config(width=0)
         # self.nextMoveOMen.pack(side=LEFT, fill=X, expand=True)
@@ -77,8 +77,6 @@ class ChessTree(tk.Frame):
         self.table.column("#0", width=100, stretch=tk.NO)
         self.table.column('move', anchor='w', width=100, stretch=tk.NO)
         self.table.configure(selectmode='browse')
-        self.table.insert('', 'end', text='one', values='two')
-        self.table.insert('', 'end', text='three', values='four')
         self.table.bind("<Button-1>", self.handle_table_click)
         
         ####################################
@@ -162,7 +160,7 @@ class ChessTree(tk.Frame):
 
     # Controls and Tree
     def ctc_diddle_var(self, diddle):
-        san = self.next_move_str.get()
+        san = self.get_next_move_str()
         # a callback that calls the api
         has_parent, variations = self.diddle_var(diddle, san)
         self.diddle_var_tree(diddle)
@@ -171,11 +169,11 @@ class ChessTree(tk.Frame):
         self.update_display(has_parent, variations, san)
 
     # Controls and Tree
-    # when the next move menu changes, next_move_str changes bringing control to here.
+    # when the next move menu changes, next_move_ctrl_str changes bringing control to here.
     # this routine updates the tree.
     # we don't use the last three parameters
     def ctc_next_move_str_trace(self, a, b, c):
-        next_move = self.next_move_str.get()
+        next_move = self.get_next_move_str()
         print("*** from next_move_str_trace")
         self.update_tree_selection_2ndary(next_move)
 
@@ -187,7 +185,7 @@ class ChessTree(tk.Frame):
         self.update_display(has_parent, variations)
         # make sure the appropriate tree node is selected based on the current move
         # and the appropriate variation of the move is secondary selected
-        next_move = self.next_move_str.get()
+        next_move = self.get_next_move_str()
         self.update_tree_selection(moves, next_move)
 
     # Tree
@@ -208,7 +206,7 @@ class ChessTree(tk.Frame):
 
     # Controls
     def ctc_get_next_move_str(self):
-        return self.next_move_str.get()
+        return self.get_next_move_str()
 
     ###################################
     # Private
@@ -284,18 +282,18 @@ class ChessTree(tk.Frame):
     def update_next_move_option_menu(self, variations, next_move_str=''):
         # reconfigure the listbox of next moves based on the current node
         # empty the listbox
-        self.next_move_str.set('')
+        self.next_move_ctrl_str.set('')
         self.nextMoveOMen['menu'].delete(0, 'end')
         # fill the listbox with the variations
         for variation in variations:
-            # !!!maybe do self.next_move_str.set(variation) ?
-            self.nextMoveOMen['menu'].add_command(label=variation, command=tk._setit(self.next_move_str, variation))
+            # !!!maybe do self.next_move_ctrl_str.set(variation) ?
+            self.nextMoveOMen['menu'].add_command(label=variation, command=tk._setit(self.next_move_ctrl_str, variation))
         # if there are variations, set it to the first one
         if len(variations) > 0:
             if next_move_str != '':
-                self.next_move_str.set(next_move_str)
+                self.next_move_ctrl_str.set(next_move_str)
             else:
-                self.next_move_str.set(variations[0])
+                self.next_move_ctrl_str.set(variations[0])
 
         for child in self.table.get_children(''):
             self.table.delete(child)
@@ -345,6 +343,13 @@ class ChessTree(tk.Frame):
         if len(childrenIDs) > 0:
             tree_node = self.get_node_with_move(selected_node, next_move)
             self.tree.item(tree_node, tags=['sel_var', 'all'])
+
+        for row in self.table.get_children(''):
+            print('row', row)
+            print('  ', self.table.item(row, 'text'))
+            if self.table.item(row, 'text') == next_move:
+                self.table.selection_set(row)
+                break
 
     def diddle_var_tree(self, diddle):
         sel_secondary_items = self.tree.tag_has("sel_var")
@@ -520,3 +525,6 @@ class ChessTree(tk.Frame):
             # self.tree.column('#0', minwidth=max_w)
             # self.tree.column('#0', minwidth=1000)
             # self.tree.column('#0', minwidth=520)
+
+    def get_next_move_str(self):
+        return self.next_move_ctrl_str.get()
