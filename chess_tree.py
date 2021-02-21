@@ -79,7 +79,7 @@ class ChessTree(tk.Frame):
         self.table.configure(selectmode='browse')
         self.table.insert('', 'end', text='one', values='two')
         self.table.insert('', 'end', text='three', values='four')
-        self.table.bind("<Button-1>", self.handle_click)
+        self.table.bind("<Button-1>", self.handle_table_click)
         
         ####################################
         # Tree
@@ -141,11 +141,12 @@ class ChessTree(tk.Frame):
     ###################################
     # User input
     ###################################
-    def handle_click(self, event):
+    def handle_table_click(self, event):
         clickedRow = self.table.identify_row(event.y)
         values = self.table.item(clickedRow, 'values')
-        text = self.table.item(clickedRow, 'text')
-        print(values, text)
+        next_move = self.table.item(clickedRow, 'text')
+        print(values, next_move)
+        self.update_tree_selection_2ndary(next_move)
 
     # tree changes due to clicks or key presses allow actions on tree selection changes
     # otherwise not
