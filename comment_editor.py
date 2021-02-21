@@ -1,13 +1,6 @@
 __author__ = 'colindavey'
 import tkinter as tk
 
-def editor2editor(ed1, ed2):
-    the_string = ed1.get(1.0, tk.END)
-    # this is needed to strip the newline that mysteriously is appended
-    the_string = the_string[0:-1]
-    ed2.replace(1.0, tk.END, the_string)
-
-
 class CommentEditor(tk.Frame):
     def __init__(self, parent=None):
         tk.Frame.__init__(self, parent)
@@ -47,57 +40,60 @@ class CommentEditor(tk.Frame):
     # def get_text(self):
     #     return self.editor.get(1.0, END)
 
-class CommentEditorApp(object):
-    def __init__(self, parent=None, model=None):
+# def editor2editor(ed1, ed2):
+#     the_string = ed1.get(1.0, tk.END)
+#     # this is needed to strip the newline that mysteriously is appended
+#     the_string = the_string[0:-1]
+#     ed2.replace(1.0, tk.END, the_string)
 
-        self.parent = parent
-        self.parent.protocol("WM_DELETE_WINDOW", self.on_closing)
+# class CommentEditorApp(object):
+#     def __init__(self, parent=None, model=None):
 
-        self.editor = tk.Text(parent)
-        self.editor.pack()
+#         self.parent = parent
+#         self.parent.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        self.comment_button = tk.Button(self.parent, text='{}', command=self.handle_button)
-        self.comment_button.pack()
-        self.ce_root = None
+#         self.editor = tk.Text(parent)
+#         self.editor.pack()
 
-    def run(self):
-        tk.mainloop()
+#         self.comment_button = tk.Button(self.parent, text='{}', command=self.handle_button)
+#         self.comment_button.pack()
+#         self.ce_root = None
 
-    def save_comment(self):
-        editor2editor(self.ce.editor, self.editor)
-        self.editor.edit_modified(False)
-        self.ce.save_button.configure(state=tk.DISABLED)
+#     def run(self):
+#         tk.mainloop()
 
-    def handle_button(self):
-        print('{} button')
-        if self.ce_root is None:
-            self.ce_root = tk.Tk()
-            self.ce_root.protocol("WM_DELETE_WINDOW", self.on_closing_comment_editor)
-            self.ce = CommentEditor(self.ce_root)
-            self.ce.save_button.config(command=self.save_comment)
+#     def save_comment(self):
+#         editor2editor(self.ce.editor, self.editor)
+#         self.editor.edit_modified(False)
+#         self.ce.save_button.configure(state=tk.DISABLED)
 
-        # low level tk stuff
-        self.ce_root.lift()
-        self.ce_root.update()
-        editor2editor(self.editor, self.ce.editor)
-        self.ce.save_button.configure(state=tk.DISABLED)
+#     def handle_button(self):
+#         print('{} button')
+#         if self.ce_root is None:
+#             self.ce_root = tk.Tk()
+#             self.ce_root.protocol("WM_DELETE_WINDOW", self.on_closing_comment_editor)
+#             self.ce = CommentEditor(self.ce_root)
+#             self.ce.save_button.config(command=self.save_comment)
 
-    def on_closing_comment_editor(self):
-        print('closing')
-        self.ce_root.destroy()
-        self.ce_root = None
+#         # low level tk stuff
+#         self.ce_root.lift()
+#         self.ce_root.update()
+#         editor2editor(self.editor, self.ce.editor)
+#         self.ce.save_button.configure(state=tk.DISABLED)
 
-    def on_closing(self):
-        if self.ce_root is not None:
-            self.ce_root.destroy()
-        self.parent.destroy()
+#     def on_closing_comment_editor(self):
+#         print('closing')
+#         self.ce_root.destroy()
+#         self.ce_root = None
 
-if __name__ == "__main__":
+#     def on_closing(self):
+#         if self.ce_root is not None:
+#             self.ce_root.destroy()
+#         self.parent.destroy()
 
-    the_parent = tk.Tk()
-    cea = CommentEditorApp(the_parent)
-    cea.run()
+# if __name__ == "__main__":
 
-
-
+#     the_parent = tk.Tk()
+#     cea = CommentEditorApp(the_parent)
+#     cea.run()
 
