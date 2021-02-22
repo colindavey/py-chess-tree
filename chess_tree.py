@@ -136,6 +136,8 @@ class ChessTree(tk.Frame):
         # self.tree.configure(takefocus=1)        
         self.move_to_tree_node_cb = move_to_tree_node_cb
 
+        self.do_trace = True
+
     ###################################
     # User input
     ###################################
@@ -173,16 +175,19 @@ class ChessTree(tk.Frame):
     # this routine updates the tree.
     # we don't use the last three parameters
     def ctc_next_move_str_trace(self, a, b, c):
-        next_move = self.get_next_move_str()
-        print("*** from next_move_str_trace")
-        self.update_tree_selection_2ndary(next_move)
+        if self.do_trace:
+            next_move = self.get_next_move_str()
+            print("*** from next_move_str_trace")
+            self.update_tree_selection_2ndary(next_move)
 
     #################################
     # Public
     #################################
     # Controls and Tree
     def ctc_update_display(self, has_parent, moves, variations):
+        self.do_trace = False
         self.update_display(has_parent, variations)
+        self.do_trace = True
         # make sure the appropriate tree node is selected based on the current move
         # and the appropriate variation of the move is secondary selected
         next_move = self.get_next_move_str()
