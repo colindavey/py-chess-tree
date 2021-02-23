@@ -191,7 +191,7 @@ class ChessTree(tk.Frame):
         self.diddle_var_tree(diddle)
         if diddle == 'remove':
             san = ''
-        self.update_display(has_parent, variations, san)
+        self.update_variations_display(has_parent, variations, san)
         self.update_tree_selection_2ndary(san)
 
     def diddle_var_tree(self, diddle):
@@ -249,7 +249,7 @@ class ChessTree(tk.Frame):
     # Controls and Tree
     def ctc_update_display(self, has_parent, moves, variations):
         self.do_trace = False
-        self.update_display(has_parent, variations)
+        self.update_variations_display(has_parent, variations)
         self.do_trace = True
         # make sure the appropriate tree node is selected based on the current move
         # and the appropriate variation of the move is secondary selected
@@ -344,9 +344,9 @@ class ChessTree(tk.Frame):
     ###################################
     ##########################################
     #
-    def update_display(self, has_parent, variations, next_move_str=''):
+    def update_variations_display(self, has_parent, variations, next_move_str=''):
         self.update_variations(variations, next_move_str)
-        print('update_display', variations)
+        print('update_variations_display', variations)
         self.update_buttons(has_parent, variations)
 
     def update_variations(self, variations, next_move_str=''):
@@ -368,12 +368,7 @@ class ChessTree(tk.Frame):
             if next_move_str == '':
                 next_move_str = variations[0]
             self.next_move_ctrl_str.set(next_move_str)
-            for row in self.table.get_children(''):
-                # print('row', row)
-                print('  ', self.table.item(row, 'text'))
-                if self.table.item(row, 'text') == next_move_str:
-                    self.table.selection_set(row)
-                    break
+            self.select_table_item(next_move_str)
 
     def update_buttons(self, has_parent, variations):
         # diable all the buttons if there are no variations
@@ -459,11 +454,11 @@ class ChessTree(tk.Frame):
         if len(childrenIDs) > 0:
             tree_node = self.get_node_with_move(selected_node, next_move)
             self.tree.item(tree_node, tags=['sel_var', 'all'])
+            self.select_table_item(next_move)
 
+    def select_table_item(self, next_move_str):
         for row in self.table.get_children(''):
-            print('row', row)
-            print('  ', self.table.item(row, 'text'))
-            if self.table.item(row, 'text') == next_move:
+            if self.table.item(row, 'text') == next_move_str:
                 self.table.selection_set(row)
                 break
 
