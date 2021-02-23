@@ -345,30 +345,35 @@ class ChessTree(tk.Frame):
     ##########################################
     #
     def update_display(self, has_parent, variations, next_move_str=''):
-        self.update_next_move_option_menu(variations, next_move_str)
+        self.update_variations(variations, next_move_str)
         print('update_display', variations)
         self.update_buttons(has_parent, variations)
 
-    def update_next_move_option_menu(self, variations, next_move_str=''):
+    def update_variations(self, variations, next_move_str=''):
         # reconfigure the listbox of next moves based on the current node
         # empty the listbox
         self.next_move_ctrl_str.set('')
         self.nextMoveOMen['menu'].delete(0, 'end')
         # fill the listbox with the variations
         for variation in variations:
-            # !!!maybe do self.next_move_ctrl_str.set(variation) ?
             self.nextMoveOMen['menu'].add_command(label=variation, command=tk._setit(self.next_move_ctrl_str, variation))
-        # if there are variations, set it to the first one
-        if len(variations) > 0:
-            if next_move_str != '':
-                self.next_move_ctrl_str.set(next_move_str)
-            else:
-                self.next_move_ctrl_str.set(variations[0])
 
+        # fill the table with the variations
         for child in self.table.get_children(''):
             self.table.delete(child)
         for variation in variations:
-            self.table.insert('', 'end', text=variation, values=variation)
+            item = self.table.insert('', 'end', text=variation, values=variation)
+
+        if len(variations) > 0:
+            if next_move_str == '':
+                next_move_str = variations[0]
+            self.next_move_ctrl_str.set(next_move_str)
+            for row in self.table.get_children(''):
+                # print('row', row)
+                print('  ', self.table.item(row, 'text'))
+                if self.table.item(row, 'text') == next_move_str:
+                    self.table.selection_set(row)
+                    break
 
     def update_buttons(self, has_parent, variations):
         # diable all the buttons if there are no variations
@@ -500,9 +505,9 @@ class ChessTree(tk.Frame):
     def get_next_move_str(self):
         next_move_table = self.table.item(self.table.selection(), 'text')
         next_move_menu = self.next_move_ctrl_str.get()
-        print('*****get_next_move_str', next_move_table, next_move_table, next_move_table==next_move_table)
-        return next_move_menu
-        # return next_move_table
+        print('*****get_next_move_str', next_move_menu, next_move_table, next_move_menu==next_move_table)
+        # return next_move_menu
+        return next_move_table
 
     # def horz_scrollbar_magic_bbox(self):
     #     # magic to get horizontal scroll bar to work
