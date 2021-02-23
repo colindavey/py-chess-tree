@@ -146,6 +146,7 @@ class ChessTree(tk.Frame):
         values = self.table.item(clickedRow, 'values')
         next_move = self.table.item(clickedRow, 'text')
         print(values, next_move)
+        self.next_move_ctrl_str.set(next_move)
         self.update_tree_selection_2ndary(next_move)
 
     # tree changes due to clicks or key presses allow actions on tree selection changes
@@ -191,6 +192,7 @@ class ChessTree(tk.Frame):
         if diddle == 'remove':
             san = ''
         self.update_display(has_parent, variations, san)
+        self.update_tree_selection_2ndary(san)
 
     def diddle_var_tree(self, diddle):
         sel_secondary_items = self.tree.tag_has("sel_var")
@@ -347,6 +349,27 @@ class ChessTree(tk.Frame):
         print('update_display', variations)
         self.update_buttons(has_parent, variations)
 
+    def update_next_move_option_menu(self, variations, next_move_str=''):
+        # reconfigure the listbox of next moves based on the current node
+        # empty the listbox
+        self.next_move_ctrl_str.set('')
+        self.nextMoveOMen['menu'].delete(0, 'end')
+        # fill the listbox with the variations
+        for variation in variations:
+            # !!!maybe do self.next_move_ctrl_str.set(variation) ?
+            self.nextMoveOMen['menu'].add_command(label=variation, command=tk._setit(self.next_move_ctrl_str, variation))
+        # if there are variations, set it to the first one
+        if len(variations) > 0:
+            if next_move_str != '':
+                self.next_move_ctrl_str.set(next_move_str)
+            else:
+                self.next_move_ctrl_str.set(variations[0])
+
+        for child in self.table.get_children(''):
+            self.table.delete(child)
+        for variation in variations:
+            self.table.insert('', 'end', text=variation, values=variation)
+
     def update_buttons(self, has_parent, variations):
         # diable all the buttons if there are no variations
         new_state = tk.NORMAL
@@ -410,26 +433,6 @@ class ChessTree(tk.Frame):
         # self.backBtn.config(state=new_state)
         # self.backFullBtn.config(state=new_state)
 
-    def update_next_move_option_menu(self, variations, next_move_str=''):
-        # reconfigure the listbox of next moves based on the current node
-        # empty the listbox
-        self.next_move_ctrl_str.set('')
-        self.nextMoveOMen['menu'].delete(0, 'end')
-        # fill the listbox with the variations
-        for variation in variations:
-            # !!!maybe do self.next_move_ctrl_str.set(variation) ?
-            self.nextMoveOMen['menu'].add_command(label=variation, command=tk._setit(self.next_move_ctrl_str, variation))
-        # if there are variations, set it to the first one
-        if len(variations) > 0:
-            if next_move_str != '':
-                self.next_move_ctrl_str.set(next_move_str)
-            else:
-                self.next_move_ctrl_str.set(variations[0])
-
-        for child in self.table.get_children(''):
-            self.table.delete(child)
-        for variation in variations:
-            self.table.insert('', 'end', text=variation, values=variation)
     #
     ##########################################
 
