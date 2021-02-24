@@ -33,18 +33,6 @@ class ChessTree(tk.Frame):
         self.openBtn.pack(side=tk.LEFT)
         self.openBtn.config(command=lambda: self.ctc_open_all(True))
 
-        # next_move_ctrl_str is a tk "control variable"
-        # see http://effbot.org/tkinterbook/variable.htm
-        # http://stackoverflow.com/questions/3876229/how-to-run-a-code-whenever-a-tkinter-widget-value-changes/3883495#3883495
-        self.next_move_ctrl_str = tk.StringVar(button_parent)
-        self.next_move_ctrl_str.trace('w', self.ctc_next_move_str_trace)
-
-        self.nextMoveOMen = tk.OptionMenu(button_parent, self.next_move_ctrl_str, [])
-        # self.nextMoveOMen.config(width=7)
-        self.nextMoveOMen.config(width=0)
-        # self.nextMoveOMen.pack(side=LEFT, fill=X, expand=True)
-        self.nextMoveOMen.pack(side=tk.LEFT)
-
         self.removeVarBtn = tk.Button(button_parent, text="x")
         self.removeVarBtn.pack(side=tk.LEFT)
         self.removeVarBtn.config(command=lambda: self.ctc_diddle_var('remove'))
@@ -136,8 +124,6 @@ class ChessTree(tk.Frame):
         # self.tree.configure(takefocus=1)        
         self.move_to_tree_node_cb = move_to_tree_node_cb
 
-        self.do_trace = True
-
     ###################################
     # User input
     ###################################
@@ -146,7 +132,6 @@ class ChessTree(tk.Frame):
         values = self.table.item(clickedRow, 'values')
         next_move = self.table.item(clickedRow, 'text')
         print(values, next_move)
-        self.next_move_ctrl_str.set(next_move)
         self.update_tree_selection_2ndary(next_move)
 
     # tree changes due to clicks or key presses allow actions on tree selection changes
@@ -166,8 +151,6 @@ class ChessTree(tk.Frame):
     # get the moves from the beginning of the game to the selected tree node
     def get_tree_moves(self):
         moves = []
-        # selitems = self.tree.selection()
-        # tmp_node = selitems[0]
         tmp_node = self.get_selected_node()
         #!!!test for root node being initital, rather than''
         while self.tree.parent(tmp_node) != '':
@@ -216,16 +199,6 @@ class ChessTree(tk.Frame):
     #
     ###########################
 
-    # Controls and Tree
-    # when the next move menu changes, next_move_ctrl_str changes bringing control to here.
-    # this routine updates the tree.
-    # we don't use the last three parameters
-    def ctc_next_move_str_trace(self, a, b, c):
-        if self.do_trace:
-            next_move = self.get_next_move_str()
-            print("*** from next_move_str_trace")
-            self.update_tree_selection_2ndary(next_move)
-
     #################################
     # Public
     #################################
@@ -248,9 +221,7 @@ class ChessTree(tk.Frame):
     #
     # Controls and Tree
     def ctc_update_display(self, has_parent, moves, variations):
-        self.do_trace = False
         self.update_variations_display(has_parent, variations)
-        self.do_trace = True
         # make sure the appropriate tree node is selected based on the current move
         # and the appropriate variation of the move is secondary selected
         next_move = self.get_next_move_str()
@@ -350,15 +321,15 @@ class ChessTree(tk.Frame):
         self.update_buttons(has_parent, variations)
 
     def update_variations(self, variations, next_move_str=''):
-        # reconfigure the listbox of next moves based on the current node
-        # empty the listbox
-        self.next_move_ctrl_str.set('')
-        self.nextMoveOMen['menu'].delete(0, 'end')
-        # fill the listbox with the variations
-        for variation in variations:
-            self.nextMoveOMen['menu'].add_command(label=variation, command=tk._setit(self.next_move_ctrl_str, variation))
+        # # reconfigure the listbox of next moves based on the current node
+        # # empty the listbox
+        # self.next_move_ctrl_str.set('')
+        # self.nextMoveOMen['menu'].delete(0, 'end')
+        # # fill the listbox with the variations
+        # for variation in variations:
+        #     self.nextMoveOMen['menu'].add_command(label=variation, command=tk._setit(self.next_move_ctrl_str, variation))
 
-        # fill the table with the variations
+        # replace the table with the variations based on the current node
         for child in self.table.get_children(''):
             self.table.delete(child)
         for variation in variations:
@@ -367,7 +338,7 @@ class ChessTree(tk.Frame):
         if len(variations) > 0:
             if next_move_str == '':
                 next_move_str = variations[0]
-            self.next_move_ctrl_str.set(next_move_str)
+            # self.next_move_ctrl_str.set(next_move_str)
             self.select_table_item(next_move_str)
 
     def update_buttons(self, has_parent, variations):
@@ -436,6 +407,10 @@ class ChessTree(tk.Frame):
     #
     ##########################################
 
+    ###################################
+    # Utility functions
+    ###################################
+
     def update_tree_selection_2ndary(self, next_move):
         print("** update_tree_selection_2ndary", next_move)
         # untag the previous selection variation
@@ -498,11 +473,7 @@ class ChessTree(tk.Frame):
         # return child
 
     def get_next_move_str(self):
-        next_move_table = self.table.item(self.table.selection(), 'text')
-        next_move_menu = self.next_move_ctrl_str.get()
-        print('*****get_next_move_str', next_move_menu, next_move_table, next_move_menu==next_move_table)
-        # return next_move_menu
-        return next_move_table
+        return self.table.item(self.table.selection(), 'text')
 
     # def horz_scrollbar_magic_bbox(self):
     #     # magic to get horizontal scroll bar to work
