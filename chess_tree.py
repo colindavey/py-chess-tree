@@ -131,7 +131,6 @@ class ChessTree(tk.Frame):
         clickedRow = self.table.identify_row(event.y)
         values = self.table.item(clickedRow, 'values')
         next_move = self.table.item(clickedRow, 'text')
-        print(values, next_move)
         self.update_tree_selection_2ndary(next_move)
 
     # tree changes due to clicks or key presses allow actions on tree selection changes
@@ -170,12 +169,13 @@ class ChessTree(tk.Frame):
     def ctc_diddle_var(self, diddle):
         san = self.get_next_move_str()
         # a callback that calls the api
-        has_parent, variations = self.diddle_var_cb(diddle, san)
+        variations = self.diddle_var_cb(diddle, san)
         self.diddle_var_tree(diddle)
         if diddle == 'remove':
             san = ''
-        self.update_variations_display(has_parent, variations, san)
-        self.update_tree_selection_2ndary(san)
+        self.update_variations(variations, san)
+        next_move = self.get_next_move_str()
+        self.update_tree_selection_2ndary(next_move)
 
     def diddle_var_tree(self, diddle):
         sel_secondary_items = self.tree.tag_has("sel_var")
@@ -209,19 +209,30 @@ class ChessTree(tk.Frame):
         # add the current move at the end of the selected node's children
         self.tree.insert(selected_node, "end", text=san_str, open=True, tags='all')
 
-    # Controls
-    def ctc_get_next_move_str(self):
-        return self.get_next_move_str()
-
     # Tree
     def ctc_update_tree_node(self, node_str, moves):
         self.tree.item(self.get_node_from_moves(moves), text=node_str)
 
+    # Tree
+    def ctc_open_all(self, bool_in):
+        items = self.tree.tag_has('all')
+        for item in items:
+            self.tree.item(item, open=bool_in)
+        # if closing, make sure that it's at least open to the current move
+        if not bool_in:
+            node = self.get_selected_node()
+            self.tree.see(node)
+            self.tree.item(node, open=True)
+
+    # Controls
+    def ctc_get_next_move_str(self):
+        return self.get_next_move_str()
+
     ###########################
     #
     # Controls and Tree
-    def ctc_update_display(self, has_parent, moves, variations):
-        self.update_variations_display(has_parent, variations)
+    def ctc_update_display(self, moves, variations):
+        self.update_variations(variations)
         # make sure the appropriate tree node is selected based on the current move
         # and the appropriate variation of the move is secondary selected
         next_move = self.get_next_move_str()
@@ -231,7 +242,6 @@ class ChessTree(tk.Frame):
         tree_node = self.get_node_from_moves(moves)
         self.tree.selection_set(tree_node)
         # self.tree.see(tree_node)
-        print("*** from update_tree_selection")
         self.update_tree_selection_2ndary(next_move)
         self.horz_scrollbar_magic()
 
@@ -270,9 +280,6 @@ class ChessTree(tk.Frame):
     #
     # Tree
     def ctc_make_tree(self, variations, tree_dict):
-        self.make_tree(variations, tree_dict)
-
-    def make_tree(self, variations, tree_dict):
         # empty tree
         children = self.tree.get_children('')
         for child in children:
@@ -283,7 +290,6 @@ class ChessTree(tk.Frame):
         self.tree.selection_set(self.get_root_node())
         # self.tree.see(tree_node)
         if len(variations) > 0:
-            print("*** from make_tree")
             self.update_tree_selection_2ndary(variations[0])
 
     def tree_pgn_node_recur(self, dict_node, parent):
@@ -293,42 +299,78 @@ class ChessTree(tk.Frame):
     #
     ###########################
 
-    #################################
-    #
-    # Tree
-    def ctc_open_all(self, bool_in):
-    #     self.open_all(bool_in)
-    # def open_all(self, bool_in):
-        items = self.tree.tag_has('all')
-        for item in items:
-            self.tree.item(item, open=bool_in)
-        # if closing, make sure that it's at least open to the current move
-        if not bool_in:
-            node = self.get_selected_node()
-            self.tree.see(node)
-            self.tree.item(node, open=True)
-    #
-    #################################
-
     ###################################
     # Private
     ###################################
     ##########################################
     #
-    def update_variations_display(self, has_parent, variations, next_move_str=''):
-        self.update_variations(variations, next_move_str)
-        print('update_variations_display', variations)
-        self.update_buttons(has_parent, variations)
+    def update_tree_selection_2ndary(self, next_move):
+        # untag the previous selection variation
+        # premise is that there is at most one
+        tagged_ids = self.tree.tag_has("sel_var")
+        if len(tagged_ids) > 0:
+            self.tree.item(tagged_ids[0], tags='all')
+        if next_move != '':
+            # get the selected node of the tree
+            selected_node = self.get_selected_node()
+            # tag the new selection variation
+            childrenIDs = self.tree.get_children(selected_node)
+            if len(childrenIDs) > 0:
+                variation_node = self.get_node_with_move(selected_node, next_move)
+                self.tree.item(variation_node, tags=['sel_var', 'all'])
+                self.select_table_item(next_move)
+        self.update_buttons()
+
+    def update_buttons(self):
+        node = self.get_selected_node()
+        has_parent = self.tree.parent(node) != ''
+        has_variations = len(self.tree.get_children(node)) > 0
+
+        # diable all the buttons if there are no variations
+        # because of above, len(variations) == 0 is equiv to no variations
+        new_state = tk.NORMAL
+        if not has_variations:
+            new_state = tk.DISABLED
+            self.removeVarBtn.config(state=new_state)
+            self.promote2MainVarBtn.config(state=new_state)
+            self.promoteVarBtn.config(state=new_state)
+            self.demoteVarBtn.config(state=new_state)
+        else:
+            rows = self.table.get_children('')
+            selected_row = self.table.selection()[0]
+
+            self.removeVarBtn.config(state=new_state)
+            new_state = tk.NORMAL
+            if selected_row == rows[0]:
+                new_state = tk.DISABLED
+            self.promote2MainVarBtn.config(state=new_state)
+            self.promoteVarBtn.config(state=new_state)
+
+            new_state = tk.NORMAL
+            if selected_row == rows[-1]:
+                new_state = tk.DISABLED
+            self.demoteVarBtn.config(state=new_state)
+
+        new_state = tk.NORMAL
+        if not has_variations:
+            new_state = tk.DISABLED
+        self.frwdBtn.config(state=new_state)
+        self.frwdFullBtn.config(state=new_state)
+
+        # diable back buttons if can't go back no more
+        new_state = tk.NORMAL
+        if not has_parent:
+            new_state = tk.DISABLED
+        self.backBtn.config(state=new_state)
+        self.backFullBtn.config(state=new_state)
+    #
+    ##########################################
+
+    ###################################
+    # Utility functions
+    ###################################
 
     def update_variations(self, variations, next_move_str=''):
-        # # reconfigure the listbox of next moves based on the current node
-        # # empty the listbox
-        # self.next_move_ctrl_str.set('')
-        # self.nextMoveOMen['menu'].delete(0, 'end')
-        # # fill the listbox with the variations
-        # for variation in variations:
-        #     self.nextMoveOMen['menu'].add_command(label=variation, command=tk._setit(self.next_move_ctrl_str, variation))
-
         # replace the table with the variations based on the current node
         for child in self.table.get_children(''):
             self.table.delete(child)
@@ -338,98 +380,7 @@ class ChessTree(tk.Frame):
         if len(variations) > 0:
             if next_move_str == '':
                 next_move_str = variations[0]
-            # self.next_move_ctrl_str.set(next_move_str)
             self.select_table_item(next_move_str)
-
-    def update_buttons(self, has_parent, variations):
-        # diable all the buttons if there are no variations
-        new_state = tk.NORMAL
-        if len(variations) == 0:
-            new_state = tk.DISABLED
-        self.removeVarBtn.config(state=new_state)
-        self.promote2MainVarBtn.config(state=new_state)
-        self.promoteVarBtn.config(state=new_state)
-        self.demoteVarBtn.config(state=new_state)
-
-       # diable back button if can't go back no more
-        new_state = tk.NORMAL
-        if not has_parent:
-            new_state = tk.DISABLED
-        self.backBtn.config(state=new_state)
-        self.backFullBtn.config(state=new_state)
-
-        # diable all the buttons if there are no variations
-        new_state = tk.NORMAL
-        if len(variations) == 0:
-            new_state = tk.DISABLED
-        self.frwdBtn.config(state=new_state)
-        self.frwdFullBtn.config(state=new_state)
-
-# This logic didn't work for various reasons, but keeping for reference
-# One issue was doesn't get invoked when uses changes menu selection via menu
-        # # diable all the buttons if there are no variations
-        # # because of above, len(variations) == 0 is equiv to no variations
-        # new_state = tk.NORMAL
-        # if len(variations) == 0:
-        #     new_state = tk.DISABLED
-        #     self.removeVarBtn.config(state=new_state)
-        #     self.promote2MainVarBtn.config(state=new_state)
-        #     self.promoteVarBtn.config(state=new_state)
-        #     self.demoteVarBtn.config(state=new_state)
-        # else:
-        #     if next_move_str == '':
-        #         next_move_str = variations[0]
-        #     self.removeVarBtn.config(state=new_state)
-        #     new_state = tk.NORMAL
-        #     if variations[0] == next_move_str:
-        #         new_state = tk.DISABLED
-        #     self.promote2MainVarBtn.config(state=new_state)
-        #     self.promoteVarBtn.config(state=new_state)
-
-        #     new_state = tk.NORMAL
-        #     if variations[-1] == next_move_str:
-        #         new_state = tk.DISABLED
-        #     self.demoteVarBtn.config(state=new_state)
-
-        # new_state = tk.NORMAL
-        # if len(variations) == 0:
-        #     new_state = tk.DISABLED
-        # self.frwdBtn.config(state=new_state)
-        # self.frwdFullBtn.config(state=new_state)
-
-        # # diable back buttons if can't go back no more
-        # new_state = tk.NORMAL
-        # if not has_parent:
-        #     new_state = tk.DISABLED
-        # self.backBtn.config(state=new_state)
-        # self.backFullBtn.config(state=new_state)
-
-    #
-    ##########################################
-
-    ###################################
-    # Utility functions
-    ###################################
-
-    def update_tree_selection_2ndary(self, next_move):
-        print("** update_tree_selection_2ndary", next_move)
-        # untag the previous selection variation
-        # premise is that there is at most one
-        tagged_ids = self.tree.tag_has("sel_var")
-        if len(tagged_ids) > 0:
-            self.tree.item(tagged_ids[0], tags='all')
-        if next_move == '':
-            return
-
-        # get the selected node of the tree
-        selected_node = self.get_selected_node()
-
-        # tag the new selection variation
-        childrenIDs = self.tree.get_children(selected_node)
-        if len(childrenIDs) > 0:
-            tree_node = self.get_node_with_move(selected_node, next_move)
-            self.tree.item(tree_node, tags=['sel_var', 'all'])
-            self.select_table_item(next_move)
 
     def select_table_item(self, next_move_str):
         for row in self.table.get_children(''):
@@ -461,7 +412,6 @@ class ChessTree(tk.Frame):
         return tree_node
 
     def get_node_with_move(self, tree_node, move):
-        print('* get_node_with_move', move, len(self.tree.get_children(tree_node)))
         # Should always find move, ie, should only call this if move exists.
         for child in self.tree.get_children(tree_node):
             tmptext = self.tree.item(child, 'text')

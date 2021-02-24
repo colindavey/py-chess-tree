@@ -193,7 +193,7 @@ class App(object):
         self.bv.update(self.state["piece_distrib"], self.state["legal_moves"], self.state["turn"])
         self.cl.update_listing(self.state["moves"])
         self.update_ce()
-        self.ct.ctc_update_display(self.state["has_parent"], self.state["moves"], self.state["variations"])
+        self.ct.ctc_update_display(self.state["moves"], self.state["variations"])
 
     def make_tree(self):
         tree_dict = json.loads(
@@ -210,7 +210,7 @@ class App(object):
     #################################
     def diddle_var(self, diddle, san):
         self.state, _ = chess_model_api_client('diddle_var', self.state, diddle=diddle, san=san)
-        return self.state["has_parent"], self.state["variations"]
+        return self.state["variations"]
 
     def set_player(self):
         # self.is_white is a control variable attached to the White/Black radio buttons
