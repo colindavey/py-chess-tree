@@ -133,6 +133,8 @@ class ChessTree(tk.Frame):
         next_move = self.table.item(clickedRow, 'text')
         self.update_tree_selection_2ndary(next_move)
 
+    ###########################
+    #
     # tree changes due to clicks or key presses allow actions on tree selection changes
     # otherwise not
     # prevents handle_node_select from running unless it was a direct result of a click,
@@ -140,8 +142,6 @@ class ChessTree(tk.Frame):
     def handle_tree_click(self, event):
         self.tree_clicked = True
 
-    ###########################
-    #
     def handle_node_select(self, event):
         if self.tree_clicked:
             self.move_to_tree_node_cb(self.get_tree_moves())
@@ -165,16 +165,20 @@ class ChessTree(tk.Frame):
 
     ###########################
     #
-    # Controls and Tree
+    # Table and tree
     def ctc_diddle_var(self, diddle):
-        san = self.get_next_move_str()
-        # a callback that calls the api
+        san = self.get_next_move_str_from_table()
+        # Diddle the model (callback that calls the api)
         variations = self.diddle_var_cb(diddle, san)
-        self.diddle_var_tree(diddle)
+
+        # Diddle the table
         if diddle == 'remove':
             san = ''
-        self.update_variations(variations, san)
-        next_move = self.get_next_move_str()
+        self.update_table_variations(variations, san)
+
+        # Diddle the tree
+        self.diddle_var_tree(diddle)
+        next_move = self.get_next_move_str_from_table()
         self.update_tree_selection_2ndary(next_move)
 
     def diddle_var_tree(self, diddle):
@@ -224,18 +228,18 @@ class ChessTree(tk.Frame):
             self.tree.see(node)
             self.tree.item(node, open=True)
 
-    # Controls
+    # Table
     def ctc_get_next_move_str(self):
-        return self.get_next_move_str()
+        return self.get_next_move_str_from_table()
 
     ###########################
     #
-    # Controls and Tree
+    # Table and tree
     def ctc_update_display(self, moves, variations):
-        self.update_variations(variations)
+        self.update_table_variations(variations)
         # make sure the appropriate tree node is selected based on the current move
         # and the appropriate variation of the move is secondary selected
-        next_move = self.get_next_move_str()
+        next_move = self.get_next_move_str_from_table()
         self.update_tree_selection(moves, next_move)
 
     def update_tree_selection(self, moves, next_move):
@@ -280,13 +284,15 @@ class ChessTree(tk.Frame):
     #
     # Tree
     def ctc_make_tree(self, variations, tree_dict):
+        # update the table
+        self.update_table_variations(variations, '')
         # empty tree
         children = self.tree.get_children('')
         for child in children:
             self.tree.delete(child)
-
+        # fill the tree
         self.tree_pgn_node_recur(tree_dict, '')
-
+        # handle tree selection
         self.tree.selection_set(self.get_root_node())
         # self.tree.see(tree_node)
         if len(variations) > 0:
@@ -302,6 +308,35 @@ class ChessTree(tk.Frame):
     ###################################
     # Private
     ###################################
+    ###################################
+    # Table utility functions
+    ###################################
+
+    def update_table_variations(self, variations, next_move_str=''):
+        # replace the table with the variations based on the current node
+        for child in self.table.get_children(''):
+            self.table.delete(child)
+        for variation in variations:
+            item = self.table.insert('', 'end', text=variation, values=variation)
+
+        if len(variations) > 0:
+            if next_move_str == '':
+                next_move_str = variations[0]
+            self.select_table_item(next_move_str)
+
+    def select_table_item(self, next_move_str):
+        for row in self.table.get_children(''):
+            if self.table.item(row, 'text') == next_move_str:
+                self.table.selection_set(row)
+                break
+
+    def get_next_move_str_from_table(self):
+        return self.table.item(self.table.selection(), 'text')
+
+    ###################################
+    # Tree utility functions
+    ###################################
+
     ##########################################
     #
     def update_tree_selection_2ndary(self, next_move):
@@ -318,7 +353,6 @@ class ChessTree(tk.Frame):
             if len(childrenIDs) > 0:
                 variation_node = self.get_node_with_move(selected_node, next_move)
                 self.tree.item(variation_node, tags=['sel_var', 'all'])
-                self.select_table_item(next_move)
         self.update_buttons()
 
     def update_buttons(self):
@@ -336,18 +370,22 @@ class ChessTree(tk.Frame):
             self.promoteVarBtn.config(state=new_state)
             self.demoteVarBtn.config(state=new_state)
         else:
-            rows = self.table.get_children('')
-            selected_row = self.table.selection()[0]
+            # Could use table or tree here, but more "pure" if sticking to tree. 
+            # There should be very few functions that are aware of both table and tree. 
+            # variations = self.table.get_children('')
+            # selected_variation = self.table.selection()[0]
+            variations = self.tree.get_children('')
+            selected_variation = self.tree.selection()[0]
 
             self.removeVarBtn.config(state=new_state)
             new_state = tk.NORMAL
-            if selected_row == rows[0]:
+            if selected_variation == variations[0]:
                 new_state = tk.DISABLED
             self.promote2MainVarBtn.config(state=new_state)
             self.promoteVarBtn.config(state=new_state)
 
             new_state = tk.NORMAL
-            if selected_row == rows[-1]:
+            if selected_variation == variations[-1]:
                 new_state = tk.DISABLED
             self.demoteVarBtn.config(state=new_state)
 
@@ -365,28 +403,6 @@ class ChessTree(tk.Frame):
         self.backFullBtn.config(state=new_state)
     #
     ##########################################
-
-    ###################################
-    # Utility functions
-    ###################################
-
-    def update_variations(self, variations, next_move_str=''):
-        # replace the table with the variations based on the current node
-        for child in self.table.get_children(''):
-            self.table.delete(child)
-        for variation in variations:
-            item = self.table.insert('', 'end', text=variation, values=variation)
-
-        if len(variations) > 0:
-            if next_move_str == '':
-                next_move_str = variations[0]
-            self.select_table_item(next_move_str)
-
-    def select_table_item(self, next_move_str):
-        for row in self.table.get_children(''):
-            if self.table.item(row, 'text') == next_move_str:
-                self.table.selection_set(row)
-                break
 
     # get the initial position node
     # assumes exactly one initial node, representing the starting position
@@ -421,9 +437,6 @@ class ChessTree(tk.Frame):
                 return child
         # print('  *** finished loop')
         # return child
-
-    def get_next_move_str(self):
-        return self.table.item(self.table.selection(), 'text')
 
     # def horz_scrollbar_magic_bbox(self):
     #     # magic to get horizontal scroll bar to work
