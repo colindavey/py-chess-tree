@@ -286,6 +286,7 @@ class App(object):
 
     def move_frwd_full(self):
         if self.check_comment():
+            self.state, _ = chess_model_api_client('move_frwd', self.state, san=self.ct.ctc_get_next_move_str())
             self.state, _ = chess_model_api_client('move_frwd_full', self.state)
             self.update_display()
             self.ct.ctc_open_all(False)

@@ -370,12 +370,8 @@ class ChessTree(tk.Frame):
             self.promoteVarBtn.config(state=new_state)
             self.demoteVarBtn.config(state=new_state)
         else:
-            # Could use table or tree here, but more "pure" if sticking to tree. 
-            # There should be very few functions that are aware of both table and tree. 
-            # variations = self.table.get_children('')
-            # selected_variation = self.table.selection()[0]
-            variations = self.tree.get_children('')
-            selected_variation = self.tree.selection()[0]
+            variations = self.table.get_children('')
+            selected_variation = self.table.selection()[0]
 
             self.removeVarBtn.config(state=new_state)
             new_state = tk.NORMAL
