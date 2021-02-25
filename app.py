@@ -153,9 +153,9 @@ class App(object):
         #######################################
         # Create the chess tree (ct) and controls
         #######################################
-        self.ct = ChessTree(self.bottom_left, self.move_to_tree_node,
-            self.left, self.bottom_right, self.backFullBtn, self.backBtn, self.frwdBtn, self.frwdFullBtn,
-            self.diddle_var)
+        self.ct = ChessTree(self.bottom_left, self.left, self.bottom_right, 
+            self.backFullBtn, self.backBtn, self.frwdBtn, self.frwdFullBtn,
+            self.diddle_var, self.move_to_tree_node)
 
         # initialize separate comment editor window, which doesn't exist yet
         self.ce_root = None

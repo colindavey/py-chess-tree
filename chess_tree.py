@@ -8,9 +8,9 @@ import tkinter.ttk as tktree
 # import wckToolTips
 
 class ChessTree(tk.Frame):
-    def __init__(self, tree_parent, move_to_tree_node_cb,
-        button_parent, table_parent, backFullBtn, backBtn, frwdBtn, frwdFullBtn,
-        diddle_var_cb):
+    def __init__(self, tree_parent, button_parent, table_parent, 
+        backFullBtn, backBtn, frwdBtn, frwdFullBtn,
+        diddle_var_cb, move_to_tree_node_cb):
         # tk.Frame.__init__(self, tree_parent, button_parent, table_parent)
         # tk.Frame.__init__(self, button_parent, table_parent)
         # tk.Frame.__init__(self, button_parent)
