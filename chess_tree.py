@@ -8,7 +8,7 @@ import tkinter.ttk as tktree
 # import wckToolTips
 
 class ChessTree(tk.Frame):
-    def __init__(self, tree_parent, button_parent, table_parent, 
+    def __init__(self, tree_parent, button_left_parent, button_right_parent, table_parent, 
         backFullBtn, backBtn, frwdBtn, frwdFullBtn,
         diddle_var_cb, move_to_tree_node_cb):
         # tk.Frame.__init__(self, tree_parent, button_parent, table_parent)
@@ -25,27 +25,27 @@ class ChessTree(tk.Frame):
         self.frwdFullBtn = frwdFullBtn
         self.diddle_var_cb = diddle_var_cb
 
-        self.closeBtn = tk.Button(button_parent, text="C")
+        self.closeBtn = tk.Button(button_left_parent, text="C")
         self.closeBtn.pack(side=tk.LEFT)
         self.closeBtn.config(command=lambda: self.ctc_open_all(False))
 
-        self.openBtn = tk.Button(button_parent, text="O")
+        self.openBtn = tk.Button(button_left_parent, text="O")
         self.openBtn.pack(side=tk.LEFT)
         self.openBtn.config(command=lambda: self.ctc_open_all(True))
 
-        self.removeVarBtn = tk.Button(button_parent, text="x")
+        self.removeVarBtn = tk.Button(button_right_parent, text="x")
         self.removeVarBtn.pack(side=tk.LEFT)
         self.removeVarBtn.config(command=lambda: self.ctc_diddle_var('remove'))
 
-        self.promote2MainVarBtn = tk.Button(button_parent, text="^^")
+        self.promote2MainVarBtn = tk.Button(button_right_parent, text="^^")
         self.promote2MainVarBtn.pack(side=tk.LEFT)
         self.promote2MainVarBtn.config(command=lambda: self.ctc_diddle_var('promote2main'))
 
-        self.promoteVarBtn = tk.Button(button_parent, text="^")
+        self.promoteVarBtn = tk.Button(button_right_parent, text="^")
         self.promoteVarBtn.pack(side=tk.LEFT)
         self.promoteVarBtn.config(command=lambda: self.ctc_diddle_var('promote'))
 
-        self.demoteVarBtn = tk.Button(button_parent, text="v")
+        self.demoteVarBtn = tk.Button(button_right_parent, text="v")
         self.demoteVarBtn.pack(side=tk.LEFT)
         self.demoteVarBtn.config(command=lambda: self.ctc_diddle_var('demote'))
 
