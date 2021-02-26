@@ -49,18 +49,15 @@ class App(object):
         self.parent = parent
         self.parent.title(self.title_str)
 
-        # be prepared to close the tree window when closing main window
+        # be prepared to close other windows (e.g. the comment editor) when closing main window
         self.parent.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # top has board and listing/other
         self.top = tk.Frame(self.parent)
-        # self.top.pack(side=TOP, fill=BOTH, expand=True)
-        # self.top.pack(side=TOP, fill=BOTH)
         self.top.pack(side=tk.TOP)
 
         # board view
         self.left = tk.Frame(self.top)
-        # self.left.pack(side=tk.LEFT, fill=BOTH, expand=True)
         self.left.pack(side=tk.LEFT)
 
         # right frame for vertical listing and other controls
@@ -142,8 +139,6 @@ class App(object):
         #######################################
         # Create the chess tree (ct) and controls
         #######################################
-        # self.ct = ChessTree(self.bottom_left, self.left, self.bottom_right, 
-        # self.ct = ChessTree(self.bottom_left, self.bottom_top_left, self.bottom_top_right, self.bottom_right, 
         self.ct = ChessTree(self.bottom, self.backFullBtn, self.backBtn, self.frwdBtn, self.frwdFullBtn,
             self.diddle_var, self.move_to_tree_node)
 
