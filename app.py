@@ -318,8 +318,9 @@ class App(object):
         self.ct.ctc_update_tree_node(self.state["node_str"], self.ce_tree_node_moves)
 
     def on_closing_comment_editor(self):
-        self.ce_root.destroy()
-        self.ce_root = None
+        if self.check_comment():
+            self.ce_root.destroy()
+            self.ce_root = None
 
 if __name__ == "__main__":
     the_parent = tk.Tk()
