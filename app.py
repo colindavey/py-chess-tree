@@ -6,7 +6,7 @@ from tkinter import messagebox
 import tkinter.filedialog as tkfiledialog
 
 from comment_editor import CommentEditor
-from board_view import BoardView
+from smart_board import SmartBoard
 from chess_listing import ChessListing
 from chess_tree import ChessTree
 
@@ -91,7 +91,7 @@ class App(object):
         #######################################
         # Create the board view (bv)
         #######################################
-        self.bv = BoardView(self.left, self.move, is_white=is_white)
+        self.bv = SmartBoard(self.left, self.move, is_white=is_white)
 
         #######################################
         # Create the right top widgents
