@@ -7,59 +7,6 @@ from file_rank_square import board_coords
 from file_rank_square import board_coords2square_name
 from file_rank_square import square_name2board_coords
 
-
-####################################
-# GUI BOARD
-####################################
-# BASED ON
-# Representing a chess set in Python
-# Part 2
-# Brendan Scott
-# 27 April 2013
-#
-# create a chess board with pieces positioned for a new game
-# row ordering is reversed from normal chess representations
-# but corresponds to a top left screen coordinate
-#
-# Dark square on a1
-# Requires there to be a directory called
-# chess_data in the current directory, and for that
-# data directory to have a copy of all the images
-
-
-# column_reference = "1 2 3 4 5 6 7 8".split(" ")
-column_reference = "a b c d e f g h".split(" ")
-
-TILE_WIDTH = 60
-# We have used a tile width of 60 because the images we are used are 60x60 pixels
-# The original svg files were obtained from
-# http://commons.wikimedia.org/wiki/Category:SVG_chess_pieces/Standard_transparent
-# after downloading they were batch converted to png, then gif files.  Bash one liners
-# to do this:
-# for i in $(ls *.svg); do inkscape -e ${i%.svg}.png -w 60 -h 60 $i ; done
-# for i in $(ls *.png); do convert $i  ${i%.png}.gif ; done
-# white and black tiles were created in inkscape
-
-BOARD_WIDTH = 8 * TILE_WIDTH
-BOARD_HEIGHT = BOARD_WIDTH
-DATA_DIR = "chess_data"
-TILES = {"black_tile": "black_tile.gif",
-         "B": "chess_b451.gif",
-         "b": "chess_b45.gif",
-         "highlight_tile": "highlight_tile.gif",
-         "k": "chess_k45.gif",
-         "K": "chess_k451.gif",
-         "n": "chess_n45.gif",
-         "N": "chess_n451.gif",
-         "p": "chess_p45.gif",
-         "P": "chess_p451.gif",
-         "q": "chess_q45.gif",
-         "Q": "chess_q451.gif",
-         "r": "chess_r45.gif",
-         "R": "chess_r451.gif",
-         "white_tile": "white_tile.gif"
-         }
-
 def get_piece_color(piece):
     if piece == '':
         return ''
@@ -70,6 +17,8 @@ def get_piece_color(piece):
 
 class BoardView(tk.Frame):
     def __init__(self, parent, move_cb, is_white=True):
+
+        # dumb board
         tk.Frame.__init__(self, parent)
         self.canvas = tk.Canvas(self, width=BOARD_WIDTH, height=BOARD_HEIGHT)
         self.canvas.pack()
@@ -87,24 +36,40 @@ class BoardView(tk.Frame):
             # eg self.images['N'] is a PhotoImage of a white knight
             # this means we can directly translate a board entry from the model into a picture
         self.pack()
-        self.is_white = is_white
-
-        self.move_cb = move_cb
         self.canvas.bind("<Button-1>", self.handle_click)
-
+        self.is_white = is_white
+    
+        # board view
+        self.piece_distrib = []
+        self.move_cb = move_cb
         self.legal_moves = []
         self.click1 = []
         self.legal_dests = []
-        self.piece_distrib = []
         self.turn = 'W'
 
-    # def handle_click(self, event):
-    #     self.handle_bv_click_cb(self.get_click_location(event))
+    ###########################################
+    # Dumb board
+    ###########################################
+    # public
+    def bv_set_player(self, is_white):
+        self.db_set_player(is_white)
 
+    # public
+    def bv_update(self, piece_distrib, legal_moves, turn):
+        self.legal_moves = legal_moves
+        self.turn = turn
+        self.bv_update_display(piece_distrib)
+
+    # public/utility function
+    def bv_update_display(self, piece_distrib):
+        self.piece_distrib = piece_distrib
+        self.db_update_display(piece_distrib)
+        
+    # user input
     def handle_click(self, event):
-        click_coords = self.get_click_location(event)
+        click_coords = self.db_get_click_location(event)
         # This update_display is necessary for when clicking multiple valid click1 squares
-        self.update_display(self.piece_distrib)
+        self.db_update_display(self.piece_distrib)
         # print('click:', click_coords["file"], click_coords["rank"])
 
         # If clicked on piece of side w turn, then it's click1.
@@ -114,8 +79,8 @@ class BoardView(tk.Frame):
             legal_dests, legal_dest_coords = self.get_legal_dests_from(click_coords)
             self.legal_dests = legal_dests
 
-            self.draw_highlights(legal_dest_coords)
-            self.draw_highlights([click_coords])
+            self.db_draw_highlights(legal_dest_coords)
+            self.db_draw_highlights([click_coords])
 
         else:
             # if we didn't just do the click1, and there is a click1 stored, then it might be the click2
@@ -130,6 +95,7 @@ class BoardView(tk.Frame):
             self.click1 = []
             self.legal_dests = []
 
+    # private
     def get_legal_dests_from(self, board_coords):
         start_coord = board_coords2square_name(board_coords)
         # filter the legal moves down to those starting from the start_coord
@@ -140,10 +106,33 @@ class BoardView(tk.Frame):
         legal_dest_coords = list(map(lambda m : square_name2board_coords(m), legal_dests))
         return legal_dests, legal_dest_coords
 
-    def set_player(self, is_white):
+    ###########################################
+    # Dumb board
+    ###########################################
+    def db_set_player(self, is_white):
         self.is_white = is_white
 
-    def get_click_location(self, event):
+    # public
+    def db_draw_highlights(self, highlight_list):
+        tile = self.images['highlight_tile']
+        for item in highlight_list:
+            self.draw_tile(item["file"], item["rank"], tile)
+
+    # public
+    def db_update_display(self, piece_distrib):
+        """ draw an empty board then draw each of the
+        pieces in the board over the top"""
+
+        # first draw the empty board
+        # then draw the pieces
+        # if the order was reversed, the board would be drawn over the pieces
+        # so we couldn't see them
+        self.clear_canvas()
+        self.draw_empty_board()
+        self.draw_pieces(piece_distrib)
+
+    # public
+    def db_get_click_location(self, event):
         # Handle a click received.  The x,y location of the click on the canvas is at
         # (event.x, event.y)
         # translate the event coordinates (ie the x,y of where the click occurred)
@@ -164,35 +153,14 @@ class BoardView(tk.Frame):
         # return BoardCoords(file_, rank)
         return board_coords(file_, rank)
 
-    def update(self, piece_distrib, legal_moves, turn):
-        self.legal_moves = legal_moves
-        self.turn = turn
-        self.update_display(piece_distrib)
-
-    def update_display(self, piece_distrib):
-        """ draw an empty board then draw each of the
-        pieces in the board over the top"""
-
-        self.piece_distrib = piece_distrib
-        # first draw the empty board
-        # then draw the pieces
-        # if the order was reversed, the board would be drawn over the pieces
-        # so we couldn't see them
-        self.clear_canvas()
-        self.draw_empty_board()
-        self.draw_pieces(piece_distrib)
-
+    # private
     def clear_canvas(self):
         """ delete everything from the canvas"""
         items = self.canvas.find_all()
         for i in items:
             self.canvas.delete(i)
 
-    def draw_tile(self, file_, rank, tile):
-        # reversing rank/file as necessary for W/B
-        x, y = self.flip_file_rank(file_, rank)
-        self.canvas.create_image(x * TILE_WIDTH, y * TILE_WIDTH, anchor=tk.NW, image=tile)
-
+    # private
     def draw_empty_board(self):
         for r in range(0, 8):
             first_tile_white = (r % 2)
@@ -211,6 +179,7 @@ class BoardView(tk.Frame):
                     tile = self.images['white_tile']
                 self.draw_tile(f, r, tile)
 
+    # private
     def draw_pieces(self, piece_distrib):
         for r in range(0, 8):
             for f in range(0, 8):
@@ -220,11 +189,13 @@ class BoardView(tk.Frame):
                 tile = self.images[piece]
                 self.draw_tile(f, r, tile)
 
-    def draw_highlights(self, highlight_list):
-        tile = self.images['highlight_tile']
-        for item in highlight_list:
-            self.draw_tile(item["file"], item["rank"], tile)
+    # private
+    def draw_tile(self, file_, rank, tile):
+        # reversing rank/file as necessary for W/B
+        x, y = self.flip_file_rank(file_, rank)
+        self.canvas.create_image(x * TILE_WIDTH, y * TILE_WIDTH, anchor=tk.NW, image=tile)
 
+    # private
     # reversing rank so rank 0 is the bottom (chess) rather than top (tk) for White
     # reversing file so file 0 is the right (chess) rather than top (tk) for Black
     def flip_file_rank(self, file_, rank):
@@ -233,3 +204,53 @@ class BoardView(tk.Frame):
         else:
             file_ = 7 - file_
         return file_, rank
+
+
+####################################
+# GUI BOARD
+####################################
+# BASED ON
+# Representing a chess set in Python
+# Part 2
+# Brendan Scott
+# 27 April 2013
+#
+# create a chess board with pieces positioned for a new game
+# row ordering is reversed from normal chess representations
+# but corresponds to a top left screen coordinate
+#
+# Dark square on a1
+# Requires there to be a directory called
+# chess_data in the current directory, and for that
+# data directory to have a copy of all the images
+
+
+# We have used a tile width of 60 because the images we are used are 60x60 pixels
+# The original svg files were obtained from
+# http://commons.wikimedia.org/wiki/Category:SVG_chess_pieces/Standard_transparent
+# after downloading they were batch converted to png, then gif files.  Bash one liners
+# to do this:
+# for i in $(ls *.svg); do inkscape -e ${i%.svg}.png -w 60 -h 60 $i ; done
+# for i in $(ls *.png); do convert $i  ${i%.png}.gif ; done
+# white and black tiles were created in inkscape
+
+TILE_WIDTH = 60
+BOARD_WIDTH = 8 * TILE_WIDTH
+BOARD_HEIGHT = BOARD_WIDTH
+DATA_DIR = "chess_data"
+TILES = {"black_tile": "black_tile.gif",
+         "B": "chess_b451.gif",
+         "b": "chess_b45.gif",
+         "highlight_tile": "highlight_tile.gif",
+         "k": "chess_k45.gif",
+         "K": "chess_k451.gif",
+         "n": "chess_n45.gif",
+         "N": "chess_n451.gif",
+         "p": "chess_p45.gif",
+         "P": "chess_p451.gif",
+         "q": "chess_q45.gif",
+         "Q": "chess_q451.gif",
+         "r": "chess_r45.gif",
+         "R": "chess_r451.gif",
+         "white_tile": "white_tile.gif"
+         }

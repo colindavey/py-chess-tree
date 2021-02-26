@@ -181,7 +181,7 @@ class App(object):
     # Manipulates GUI
     #################################
     def update_display(self):
-        self.bv.update(self.state["piece_distrib"], self.state["legal_moves"], self.state["turn"])
+        self.bv.bv_update(self.state["piece_distrib"], self.state["legal_moves"], self.state["turn"])
         self.cl.update_listing(self.state["moves"])
         self.update_ce()
         self.ct.ctc_update_display(self.state["moves"], self.state["variations"])
@@ -206,8 +206,8 @@ class App(object):
     def set_player(self):
         # self.is_white is a control variable attached to the White/Black radio buttons
         is_white = self.is_white.get()
-        self.bv.set_player(is_white)
-        self.bv.update_display(self.state["piece_distrib"])
+        self.bv.bv_set_player(is_white)
+        self.bv.bv_update_display(self.state["piece_distrib"])
         self.state, _ = chess_model_api_client('set_headers', self.state, is_white=is_white)
         self.ct.ctc_update_tree_node(self.state["root_node_str"], [])
 
