@@ -1,5 +1,4 @@
 # /usr/bin/python
-
 import json
 import tkinter as tk
 from tkinter import messagebox
@@ -306,13 +305,12 @@ class App(object):
     def check_comment(self):
         ret_val = True
         if self.ce_root is not None:
-            print('edited ', self.ce.editor.edit_modified())
-            if self.ce.editor.edit_modified():
+            if self.ce.get_is_modified():
                 resp = messagebox.askyesnocancel('Save comment?', 'The comment has been edited. Save?')
                 if resp is None:
                     ret_val = False
                 elif resp is True:
-                    self.save_comment()
+                    self.ce.save_comment()
         return ret_val
 
     def save_comment(self, comment):
