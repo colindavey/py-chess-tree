@@ -285,14 +285,6 @@ class App(object):
     #################################
     # Comment editing (put elsewhere?)
     #################################
-    def update_ce(self):
-        if self.ce_root is not None:
-            comment = self.state["comment"]
-            self.ce.update_comment(comment)
-            # this is necessary in case the user makes the next node by clicking on the tree.
-            # otherwise, we could just use the selected node at that time.
-            self.ce_tree_node_moves = self.state['moves'] 
-
     def handle_comment_button(self):
         if self.ce_root is None:
             self.ce_root = tk.Tk()
@@ -302,6 +294,14 @@ class App(object):
         # low level tk stuff
         self.ce_root.lift()
         self.ce_root.update()
+
+    def update_ce(self):
+        if self.ce_root is not None:
+            comment = self.state["comment"]
+            self.ce.update_comment(comment)
+            # this is necessary in case the user makes the next node by clicking on the tree.
+            # otherwise, we could just use the selected node at that time.
+            self.ce_tree_node_moves = self.state['moves'] 
 
     def check_comment(self):
         ret_val = True

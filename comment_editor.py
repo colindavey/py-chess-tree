@@ -54,8 +54,6 @@ class CommentEditor(tk.Frame):
 
     def update_comment(self, comment):
         self.editor.replace(1.0, tk.END, comment)
-        # self.save_button.configure(state=tk.DISABLED)
-        # self.editor.edit_modified(False)
         self.set_not_dirty()
 
     def save_comment(self):
@@ -63,8 +61,6 @@ class CommentEditor(tk.Frame):
         comment = comment[0:-1]
         print('comment:', comment)
         self.save_comment_cb(comment)
-        # self.save_button.configure(state=tk.DISABLED)
-        # self.editor.edit_modified(False)
         self.set_not_dirty()
 
     def set_not_dirty(self):
