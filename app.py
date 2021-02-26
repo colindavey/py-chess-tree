@@ -14,15 +14,15 @@ from chess_model_api_server import chess_model_api
 from chess_model_api_server import chess_model_api_init
 from chess_model_api_server import chess_model_api_make_tree
 
-#####################################
-# Utility Functions - used by App only
-
 def geo_str2list(geo_str):
     geo_str = geo_str.replace('+', ' ')
     geo_str = geo_str.replace('x', ' ')
     geo = geo_str.split(' ')
     geo = [int(i) for i in geo]
     return geo
+
+#####################################
+# Utility Functions - used by App only
 
 def json_state(state_in):
     state_arg = json.dumps({
@@ -288,37 +288,15 @@ class App(object):
     def update_ce(self):
         if self.ce_root is not None:
             comment = self.state["comment"]
-            self.ce.editor.replace(1.0, tk.END, comment)
-            self.ce.save_button.configure(state=tk.DISABLED)
-            self.ce.editor.edit_modified(False)
-            # this is only necessary in case the user makes the next node by clicking on the tree.
+            self.ce.update_comment(comment)
+            # this is necessary in case the user makes the next node by clicking on the tree.
             # otherwise, we could just use the selected node at that time.
             self.ce_tree_node_moves = self.state['moves'] 
 
     def handle_comment_button(self):
         if self.ce_root is None:
             self.ce_root = tk.Tk()
-            self.ce_root.title(self.title_str + '. Comment editor')
-            self.ce_root.protocol("WM_DELETE_WINDOW", self.on_closing_comment_editor)
-            self.ce = CommentEditor(self.ce_root)
-
-            screenw = self.parent.winfo_screenwidth()
-            # screenh = self.parent.winfo_screenheight()
-            self.ce_root.update_idletasks()
-            # geo = [w, h, x, y]
-            ce_geo = geo_str2list(self.ce_root.geometry())
-            parent_geo = geo_str2list(self.parent.geometry())
-            # put left of ce against right of parent
-            ce_geo[2] = parent_geo[2] + parent_geo[0]
-            # if right of ce off screen, then
-            if ce_geo[2] + ce_geo[0] > screenw:
-                # put right of ce against right of screen
-                ce_geo[2] = screenw - ce_geo[0]
-            self.ce_root.geometry("%dx%d+%d+%d" % tuple(ce_geo))
-            # don't let it get too small for the button to show
-            self.ce_root.minsize(width=ce_geo[0], height=ce_geo[1])
-
-            self.ce.save_button.config(command=self.save_comment)
+            self.ce = CommentEditor(self.ce_root, self.parent, self.title_str, self.save_comment, self.on_closing_comment_editor)
 
         self.update_ce()
         # low level tk stuff
@@ -337,13 +315,8 @@ class App(object):
                     self.save_comment()
         return ret_val
 
-    def save_comment(self):
-        comment = self.ce.editor.get(1.0, tk.END)
-        comment = comment[0:-1]
-        print('comment:', comment)
+    def save_comment(self, comment):
         self.state, _ = chess_model_api_client('set_comment', self.state, comment=comment)
-        self.ce.save_button.configure(state=tk.DISABLED)
-        self.ce.editor.edit_modified(False)
         self.ct.ctc_update_tree_node(self.state["node_str"], self.ce_tree_node_moves)
 
     def on_closing_comment_editor(self):
