@@ -8,13 +8,32 @@ import tkinter.ttk as tktree
 # import wckToolTips
 
 class ChessTree(tk.Frame):
-    def __init__(self, tree_parent, button_left_parent, button_right_parent, table_parent, 
-        backFullBtn, backBtn, frwdBtn, frwdFullBtn,
+    # def __init__(self, tree_parent, button_left_parent, button_right_parent, table_parent, 
+    def __init__(self, parent, backFullBtn, backBtn, frwdBtn, frwdFullBtn,
         diddle_var_cb, move_to_tree_node_cb):
         # tk.Frame.__init__(self, tree_parent, button_parent, table_parent)
         # tk.Frame.__init__(self, button_parent, table_parent)
         # tk.Frame.__init__(self, button_parent)
-        tk.Frame.__init__(self, tree_parent)
+        tk.Frame.__init__(self, parent)
+
+        # tree_parent, button_left_parent, button_right_parent, table_parent
+        self.top_parent = tk.Frame(parent)
+        self.top_parent.pack(side=tk.TOP, anchor=tk.W, fill=tk.BOTH, expand=True)
+
+        self.button_left_parent = tk.Frame(self.top_parent)
+        self.button_left_parent.pack(side=tk.LEFT, anchor=tk.W)
+
+        self.button_right_parent = tk.Frame(self.top_parent)
+        self.button_right_parent.pack(side=tk.RIGHT, anchor=tk.E)
+
+        # tree
+        self.tree_parent = tk.Frame(parent)
+        self.tree_parent.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # # next table
+        self.table_parent = tk.Frame(parent)
+        # self.bottom_right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.table_parent.pack(side=tk.LEFT)
 
         ####################################
         # Buttons
@@ -25,27 +44,27 @@ class ChessTree(tk.Frame):
         self.frwdFullBtn = frwdFullBtn
         self.diddle_var_cb = diddle_var_cb
 
-        self.closeBtn = tk.Button(button_left_parent, text="C")
+        self.closeBtn = tk.Button(self.button_left_parent, text="C")
         self.closeBtn.pack(side=tk.LEFT)
         self.closeBtn.config(command=lambda: self.ctc_open_all(False))
 
-        self.openBtn = tk.Button(button_left_parent, text="O")
+        self.openBtn = tk.Button(self.button_left_parent, text="O")
         self.openBtn.pack(side=tk.LEFT)
         self.openBtn.config(command=lambda: self.ctc_open_all(True))
 
-        self.removeVarBtn = tk.Button(button_right_parent, text="x")
+        self.removeVarBtn = tk.Button(self.button_right_parent, text="x")
         self.removeVarBtn.pack(side=tk.LEFT)
         self.removeVarBtn.config(command=lambda: self.ctc_diddle_var('remove'))
 
-        self.promote2MainVarBtn = tk.Button(button_right_parent, text="^^")
+        self.promote2MainVarBtn = tk.Button(self.button_right_parent, text="^^")
         self.promote2MainVarBtn.pack(side=tk.LEFT)
         self.promote2MainVarBtn.config(command=lambda: self.ctc_diddle_var('promote2main'))
 
-        self.promoteVarBtn = tk.Button(button_right_parent, text="^")
+        self.promoteVarBtn = tk.Button(self.button_right_parent, text="^")
         self.promoteVarBtn.pack(side=tk.LEFT)
         self.promoteVarBtn.config(command=lambda: self.ctc_diddle_var('promote'))
 
-        self.demoteVarBtn = tk.Button(button_right_parent, text="v")
+        self.demoteVarBtn = tk.Button(self.button_right_parent, text="v")
         self.demoteVarBtn.pack(side=tk.LEFT)
         self.demoteVarBtn.config(command=lambda: self.ctc_diddle_var('demote'))
 
@@ -53,9 +72,9 @@ class ChessTree(tk.Frame):
         # Table
         ####################################
         # show="tree" turns off the heading
-        self.table = tktree.Treeview(table_parent, show="tree")
+        self.table = tktree.Treeview(self.table_parent, show="tree")
         # self.table = tktree.Treeview(table_parent)
-        ysb = tktree.Scrollbar(table_parent, orient='vertical', command=self.table.yview)
+        ysb = tktree.Scrollbar(self.table_parent, orient='vertical', command=self.table.yview)
         self.table.configure(yscroll=ysb.set)
         ysb.pack(side=tk.RIGHT, fill=tk.Y)
         self.table.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
@@ -80,9 +99,9 @@ class ChessTree(tk.Frame):
         #     tk.Grid.columnconfigure(parent, 0, weight=1)
         #     tk.Grid.rowconfigure(parent, 0, weight=1)
         ####################
-        self.tree = tktree.Treeview(tree_parent, show='tree')
-        xsb = tktree.Scrollbar(tree_parent, orient='horizontal', command=self.tree.xview)
-        ysb = tktree.Scrollbar(tree_parent, orient='vertical', command=self.tree.yview)
+        self.tree = tktree.Treeview(self.tree_parent, show='tree')
+        xsb = tktree.Scrollbar(self.tree_parent, orient='horizontal', command=self.tree.xview)
+        ysb = tktree.Scrollbar(self.tree_parent, orient='vertical', command=self.tree.yview)
         # self.tree.configure(yscroll=ysb.set, xscroll=xsb.set)
         self.tree.configure(xscroll=xsb.set)
         self.tree.configure(yscroll=ysb.set)

@@ -84,28 +84,9 @@ class App(object):
         self.right_bottom = tk.Frame(self.right)
         self.right_bottom.pack(side=tk.BOTTOM)
 
-        # tree complex
+        # tree
         self.bottom = tk.Frame(self.parent)
         self.bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
-
-        # tree controls
-        self.bottom_top = tk.Frame(self.bottom)
-        self.bottom_top.pack(side=tk.TOP, anchor=tk.W, fill=tk.BOTH, expand=True)
-
-        self.bottom_top_left = tk.Frame(self.bottom_top)
-        self.bottom_top_left.pack(side=tk.LEFT, anchor=tk.W)
-
-        self.bottom_top_right = tk.Frame(self.bottom_top)
-        self.bottom_top_right.pack(side=tk.RIGHT, anchor=tk.E)
-
-        # tree
-        self.bottom_left = tk.Frame(self.bottom)
-        self.bottom_left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-        # # next table
-        self.bottom_right = tk.Frame(self.bottom)
-        # self.bottom_right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.bottom_right.pack(side=tk.LEFT)
 
         #######################################
         # Create the board view (bv)
@@ -163,8 +144,8 @@ class App(object):
         # Create the chess tree (ct) and controls
         #######################################
         # self.ct = ChessTree(self.bottom_left, self.left, self.bottom_right, 
-        self.ct = ChessTree(self.bottom_left, self.bottom_top_left, self.bottom_top_right, self.bottom_right, 
-            self.backFullBtn, self.backBtn, self.frwdBtn, self.frwdFullBtn,
+        # self.ct = ChessTree(self.bottom_left, self.bottom_top_left, self.bottom_top_right, self.bottom_right, 
+        self.ct = ChessTree(self.bottom, self.backFullBtn, self.backBtn, self.frwdBtn, self.frwdFullBtn,
             self.diddle_var, self.move_to_tree_node)
 
         # initialize separate comment editor window, which doesn't exist yet

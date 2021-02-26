@@ -105,7 +105,7 @@ class BoardView(tk.Frame):
         click_coords = self.get_click_location(event)
         # This update_display is necessary for when clicking multiple valid click1 squares
         self.update_display(self.piece_distrib)
-        print('click:', click_coords["file"], click_coords["rank"])
+        # print('click:', click_coords["file"], click_coords["rank"])
 
         # If clicked on piece of side w turn, then it's click1.
         #   highlight the piece and all legal moves
@@ -122,7 +122,7 @@ class BoardView(tk.Frame):
             if self.click1 != []:
                 click2 = click_coords
                 click2_str = board_coords2square_name(click2)
-                print(click2_str, self.legal_dests)
+                # print(click2_str, self.legal_dests)
                 if click2_str in self.legal_dests:
                     self.move_cb(self.click1, click2)
 
