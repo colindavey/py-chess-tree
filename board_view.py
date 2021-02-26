@@ -7,19 +7,61 @@ from file_rank_square import board_coords
 from file_rank_square import board_coords2square_name
 from file_rank_square import square_name2board_coords
 
-def get_piece_color(piece):
-    if piece == '':
-        return ''
-    elif piece.lower() == piece:
-        return 'B'
-    else:
-        return 'W'
+####################################
+# GUI BOARD
+####################################
+# BASED ON
+# Representing a chess set in Python
+# Part 2
+# Brendan Scott
+# 27 April 2013
+#
+# create a chess board with pieces positioned for a new game
+# row ordering is reversed from normal chess representations
+# but corresponds to a top left screen coordinate
+#
+# Dark square on a1
+# Requires there to be a directory called
+# chess_data in the current directory, and for that
+# data directory to have a copy of all the images
 
-class BoardView(tk.Frame):
-    def __init__(self, parent, move_cb, is_white=True):
 
-        # dumb board
+# We have used a tile width of 60 because the images we are used are 60x60 pixels
+# The original svg files were obtained from
+# http://commons.wikimedia.org/wiki/Category:SVG_chess_pieces/Standard_transparent
+# after downloading they were batch converted to png, then gif files.  Bash one liners
+# to do this:
+# for i in $(ls *.svg); do inkscape -e ${i%.svg}.png -w 60 -h 60 $i ; done
+# for i in $(ls *.png); do convert $i  ${i%.png}.gif ; done
+# white and black tiles were created in inkscape
+
+TILE_WIDTH = 60
+BOARD_WIDTH = 8 * TILE_WIDTH
+BOARD_HEIGHT = BOARD_WIDTH
+DATA_DIR = "chess_data"
+TILES = {"black_tile": "black_tile.gif",
+         "B": "chess_b451.gif",
+         "b": "chess_b45.gif",
+         "highlight_tile": "highlight_tile.gif",
+         "k": "chess_k45.gif",
+         "K": "chess_k451.gif",
+         "n": "chess_n45.gif",
+         "N": "chess_n451.gif",
+         "p": "chess_p45.gif",
+         "P": "chess_p451.gif",
+         "q": "chess_q45.gif",
+         "Q": "chess_q451.gif",
+         "r": "chess_r45.gif",
+         "R": "chess_r451.gif",
+         "white_tile": "white_tile.gif"
+         }
+
+class DumbBoard(tk.Frame):
+    def __init__(self, parent, handle_click_cb, is_white=True):
         tk.Frame.__init__(self, parent)
+        self.handle_click_cb = handle_click_cb
+        self.is_white = is_white
+
         self.canvas = tk.Canvas(self, width=BOARD_WIDTH, height=BOARD_HEIGHT)
         self.canvas.pack()
         self.images = {}
@@ -36,79 +78,9 @@ class BoardView(tk.Frame):
             # eg self.images['N'] is a PhotoImage of a white knight
             # this means we can directly translate a board entry from the model into a picture
         self.pack()
-        self.canvas.bind("<Button-1>", self.handle_click)
-        self.is_white = is_white
-    
-        # board view
-        self.piece_distrib = []
-        self.move_cb = move_cb
-        self.legal_moves = []
-        self.click1 = []
-        self.legal_dests = []
-        self.turn = 'W'
-
-    ###########################################
-    # Dumb board
-    ###########################################
-    # public
-    def bv_set_player(self, is_white):
-        self.db_set_player(is_white)
+        self.canvas.bind("<Button-1>", self.handle_click_cb)
 
     # public
-    def bv_update(self, piece_distrib, legal_moves, turn):
-        self.legal_moves = legal_moves
-        self.turn = turn
-        self.bv_update_display(piece_distrib)
-
-    # public/utility function
-    def bv_update_display(self, piece_distrib):
-        self.piece_distrib = piece_distrib
-        self.db_update_display(piece_distrib)
-        
-    # user input
-    def handle_click(self, event):
-        click_coords = self.db_get_click_location(event)
-        # This update_display is necessary for when clicking multiple valid click1 squares
-        self.db_update_display(self.piece_distrib)
-        # print('click:', click_coords["file"], click_coords["rank"])
-
-        # If clicked on piece of side w turn, then it's click1.
-        #   highlight the piece and all legal moves
-        if get_piece_color(self.piece_distrib[click_coords["rank"]][click_coords["file"]]) == self.turn:
-            self.click1 = click_coords
-            legal_dests, legal_dest_coords = self.get_legal_dests_from(click_coords)
-            self.legal_dests = legal_dests
-
-            self.db_draw_highlights(legal_dest_coords)
-            self.db_draw_highlights([click_coords])
-
-        else:
-            # if we didn't just do the click1, and there is a click1 stored, then it might be the click2
-            if self.click1 != []:
-                click2 = click_coords
-                click2_str = board_coords2square_name(click2)
-                # print(click2_str, self.legal_dests)
-                if click2_str in self.legal_dests:
-                    self.move_cb(self.click1, click2)
-
-            # reset
-            self.click1 = []
-            self.legal_dests = []
-
-    # private
-    def get_legal_dests_from(self, board_coords):
-        start_coord = board_coords2square_name(board_coords)
-        # filter the legal moves down to those starting from the start_coord
-        legal_moves = list(filter(lambda m : m[0:2] == start_coord, self.legal_moves))
-        # e.g. maps ["e2e3", "e2e4"] to ["e3", "e4"] 
-        legal_dests = list(map(lambda m : m[2:], legal_moves))
-        # e.g. maps ["e3", "e4"]  to [{f : 4, r : 2}, {f : 4, r : 3}]
-        legal_dest_coords = list(map(lambda m : square_name2board_coords(m), legal_dests))
-        return legal_dests, legal_dest_coords
-
-    ###########################################
-    # Dumb board
-    ###########################################
     def db_set_player(self, is_white):
         self.is_white = is_white
 
@@ -205,52 +177,80 @@ class BoardView(tk.Frame):
             file_ = 7 - file_
         return file_, rank
 
+def get_piece_color(piece):
+    if piece == '':
+        return ''
+    elif piece.lower() == piece:
+        return 'B'
+    else:
+        return 'W'
 
-####################################
-# GUI BOARD
-####################################
-# BASED ON
-# Representing a chess set in Python
-# Part 2
-# Brendan Scott
-# 27 April 2013
-#
-# create a chess board with pieces positioned for a new game
-# row ordering is reversed from normal chess representations
-# but corresponds to a top left screen coordinate
-#
-# Dark square on a1
-# Requires there to be a directory called
-# chess_data in the current directory, and for that
-# data directory to have a copy of all the images
+class BoardView(tk.Frame):
+    def __init__(self, parent, move_cb, is_white=True):
+        self.db = DumbBoard(parent, self.handle_click, is_white)
+        self.piece_distrib = []
+        self.move_cb = move_cb
+        self.legal_moves = []
+        self.click1 = []
+        self.legal_dests = []
+        self.turn = 'W'
 
+    ###########################################
+    # Dumb board
+    ###########################################
+    # public
+    def bv_set_player(self, is_white):
+        self.db.db_set_player(is_white)
 
-# We have used a tile width of 60 because the images we are used are 60x60 pixels
-# The original svg files were obtained from
-# http://commons.wikimedia.org/wiki/Category:SVG_chess_pieces/Standard_transparent
-# after downloading they were batch converted to png, then gif files.  Bash one liners
-# to do this:
-# for i in $(ls *.svg); do inkscape -e ${i%.svg}.png -w 60 -h 60 $i ; done
-# for i in $(ls *.png); do convert $i  ${i%.png}.gif ; done
-# white and black tiles were created in inkscape
+    # public
+    def bv_update(self, piece_distrib, legal_moves, turn):
+        self.legal_moves = legal_moves
+        self.turn = turn
+        self.bv_update_display(piece_distrib)
 
-TILE_WIDTH = 60
-BOARD_WIDTH = 8 * TILE_WIDTH
-BOARD_HEIGHT = BOARD_WIDTH
-DATA_DIR = "chess_data"
-TILES = {"black_tile": "black_tile.gif",
-         "B": "chess_b451.gif",
-         "b": "chess_b45.gif",
-         "highlight_tile": "highlight_tile.gif",
-         "k": "chess_k45.gif",
-         "K": "chess_k451.gif",
-         "n": "chess_n45.gif",
-         "N": "chess_n451.gif",
-         "p": "chess_p45.gif",
-         "P": "chess_p451.gif",
-         "q": "chess_q45.gif",
-         "Q": "chess_q451.gif",
-         "r": "chess_r45.gif",
-         "R": "chess_r451.gif",
-         "white_tile": "white_tile.gif"
-         }
+    # public/utility function
+    def bv_update_display(self, piece_distrib):
+        self.piece_distrib = piece_distrib
+        self.db.db_update_display(piece_distrib)
+        
+    # user input
+    def handle_click(self, event):
+        click_coords = self.db.db_get_click_location(event)
+        # This update_display is necessary for when clicking multiple valid click1 squares
+        self.db.db_update_display(self.piece_distrib)
+        # print('click:', click_coords["file"], click_coords["rank"])
+
+        # If clicked on piece of side w turn, then it's click1.
+        #   highlight the piece and all legal moves
+        if get_piece_color(self.piece_distrib[click_coords["rank"]][click_coords["file"]]) == self.turn:
+            self.click1 = click_coords
+            legal_dests, legal_dest_coords = self.get_legal_dests_from(click_coords)
+            self.legal_dests = legal_dests
+
+            self.db.db_draw_highlights(legal_dest_coords)
+            self.db.db_draw_highlights([click_coords])
+
+        else:
+            # if we didn't just do the click1, and there is a click1 stored, then it might be the click2
+            if self.click1 != []:
+                click2 = click_coords
+                click2_str = board_coords2square_name(click2)
+                # print(click2_str, self.legal_dests)
+                if click2_str in self.legal_dests:
+                    self.move_cb(self.click1, click2)
+
+            # reset
+            self.click1 = []
+            self.legal_dests = []
+
+    # private
+    def get_legal_dests_from(self, board_coords):
+        start_coord = board_coords2square_name(board_coords)
+        # filter the legal moves down to those starting from the start_coord
+        legal_moves = list(filter(lambda m : m[0:2] == start_coord, self.legal_moves))
+        # e.g. maps ["e2e3", "e2e4"] to ["e3", "e4"] 
+        legal_dests = list(map(lambda m : m[2:], legal_moves))
+        # e.g. maps ["e3", "e4"]  to [{f : 4, r : 2}, {f : 4, r : 3}]
+        legal_dest_coords = list(map(lambda m : square_name2board_coords(m), legal_dests))
+        return legal_dests, legal_dest_coords
+
