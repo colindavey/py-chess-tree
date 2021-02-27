@@ -42,7 +42,6 @@ class ChessTree(tk.Frame):
         self.backBtn = backBtn
         self.frwdBtn = frwdBtn
         self.frwdFullBtn = frwdFullBtn
-        self.diddle_var_cb = diddle_var_cb
 
         self.closeBtn = tk.Button(self.button_left_parent, text="C")
         self.closeBtn.pack(side=tk.LEFT)
@@ -140,8 +139,10 @@ class ChessTree(tk.Frame):
         self.tree.bind("<Key>", self.handle_tree_click)
         self.tree.bind("<<TreeviewSelect>>", self.handle_node_select)
         self.tree_clicked = False
-        # self.tree.configure(takefocus=1)        
+        # self.tree.configure(takefocus=1)
+
         self.move_to_tree_node_cb = move_to_tree_node_cb
+        self.diddle_var_cb = diddle_var_cb
 
     ###################################
     # User input

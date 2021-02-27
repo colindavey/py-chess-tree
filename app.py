@@ -305,12 +305,13 @@ class App(object):
                 if resp is None:
                     ret_val = False
                 elif resp is True:
-                    self.ce.save_comment()
+                    self.save_comment()
         return ret_val
 
-    def save_comment(self, comment):
-        self.state, _ = chess_model_api_client('set_comment', self.state, comment=comment)
+    def save_comment(self):
+        self.state, _ = chess_model_api_client('set_comment', self.state, comment=self.ce.get_comment())
         self.ct.ctc_update_tree_node(self.state["node_str"], self.ce_tree_node_moves)
+        self.ce.set_not_dirty()
 
     def on_closing_comment_editor(self):
         if self.check_comment():
