@@ -13,13 +13,6 @@ from chess_model_api_server import chess_model_api
 from chess_model_api_server import chess_model_api_init
 from chess_model_api_server import chess_model_api_make_tree
 
-def geo_str2list(geo_str):
-    geo_str = geo_str.replace('+', ' ')
-    geo_str = geo_str.replace('x', ' ')
-    geo = geo_str.split(' ')
-    geo = [int(i) for i in geo]
-    return geo
-
 #####################################
 # Utility Functions - used by App only
 
@@ -68,10 +61,6 @@ class App(object):
         self.right_top = tk.Frame(self.right)
         self.right_top.pack(side=tk.TOP)
         
-        # W/B radio buttons
-        self.right_top2 = tk.Frame(self.right)
-        self.right_top2.pack(side=tk.TOP)
-
         # Listing
         self.right_main = tk.Frame(self.right)
         self.right_main.pack(side=tk.TOP)
