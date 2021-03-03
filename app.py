@@ -100,16 +100,16 @@ class App(object):
         self.saveBtn.pack(side=tk.LEFT)
         self.saveBtn.config(command=self.save_pgn)
 
+        self.commentBtn = tk.Button(self.right_top, text="{}")
+        self.commentBtn.pack(side=tk.LEFT)
+        self.commentBtn.config(command=self.handle_comment_button)
+
         self.is_white = tk.IntVar()
         self.is_white.set(is_white)
         self.rb_w = tk.Radiobutton(self.right_top2, text="W", variable=self.is_white, value=1, command=self.set_player)
         self.rb_w.pack(side=tk.LEFT)
         self.rb_b = tk.Radiobutton(self.right_top2, text="B", variable=self.is_white, value=0, command=self.set_player)
         self.rb_b.pack(side=tk.LEFT)
-
-        self.commentBtn = tk.Button(self.right_top2, text="{}")
-        self.commentBtn.pack(side=tk.LEFT)
-        self.commentBtn.config(command=self.handle_comment_button)
 
         #######################################
         # Create the chess listing (cl)
