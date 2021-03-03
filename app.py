@@ -104,13 +104,6 @@ class App(object):
         self.commentBtn.pack(side=tk.LEFT)
         self.commentBtn.config(command=self.handle_comment_button)
 
-        self.is_white = tk.IntVar()
-        self.is_white.set(is_white)
-        self.rb_w = tk.Radiobutton(self.right_top2, text="W", variable=self.is_white, value=1, command=self.set_player)
-        self.rb_w.pack(side=tk.LEFT)
-        self.rb_b = tk.Radiobutton(self.right_top2, text="B", variable=self.is_white, value=0, command=self.set_player)
-        self.rb_b.pack(side=tk.LEFT)
-
         #######################################
         # Create the chess listing (cl)
         #######################################
@@ -140,7 +133,7 @@ class App(object):
         # Create the chess tree (ct) and controls
         #######################################
         self.ct = ChessTree(self.bottom, self.backFullBtn, self.backBtn, self.frwdBtn, self.frwdFullBtn,
-            self.diddle_var, self.move_to_tree_node)
+            self.diddle_var, self.move_to_tree_node, self.set_player, is_white)
 
         # initialize separate comment editor window, which doesn't exist yet
         self.ce_root = None
@@ -197,9 +190,8 @@ class App(object):
         self.state, _ = chess_model_api_client('diddle_var', self.state, diddle=diddle, san=san)
         return self.state["variations"]
 
-    def set_player(self):
-        # self.is_white is a control variable attached to the White/Black radio buttons
-        is_white = self.is_white.get()
+    def set_player(self, is_white):
+        # is_white = self.is_white.get()
         self.bv.bv_set_player(is_white)
         self.bv.bv_update_display(self.state["piece_distrib"])
         self.state, _ = chess_model_api_client('set_headers', self.state, is_white=is_white)

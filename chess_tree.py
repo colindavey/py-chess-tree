@@ -10,7 +10,7 @@ import tkinter.ttk as tktree
 class ChessTree(tk.Frame):
     # def __init__(self, tree_parent, button_left_parent, button_right_parent, table_parent, 
     def __init__(self, parent, backFullBtn, backBtn, frwdBtn, frwdFullBtn,
-        diddle_var_cb, move_to_tree_node_cb):
+        diddle_var_cb, move_to_tree_node_cb, set_player_cb, is_white):
         # tk.Frame.__init__(self, tree_parent, button_parent, table_parent)
         # tk.Frame.__init__(self, button_parent, table_parent)
         # tk.Frame.__init__(self, button_parent)
@@ -42,6 +42,13 @@ class ChessTree(tk.Frame):
         self.backBtn = backBtn
         self.frwdBtn = frwdBtn
         self.frwdFullBtn = frwdFullBtn
+
+        self.is_white = tk.IntVar()
+        self.is_white.set(is_white)
+        self.rb_w = tk.Radiobutton(self.button_left_parent, text="W", variable=self.is_white, value=1, command=self.set_player)
+        self.rb_w.pack(side=tk.LEFT)
+        self.rb_b = tk.Radiobutton(self.button_left_parent, text="B", variable=self.is_white, value=0, command=self.set_player)
+        self.rb_b.pack(side=tk.LEFT)
 
         self.closeBtn = tk.Button(self.button_left_parent, text="C")
         self.closeBtn.pack(side=tk.LEFT)
@@ -143,6 +150,7 @@ class ChessTree(tk.Frame):
 
         self.move_to_tree_node_cb = move_to_tree_node_cb
         self.diddle_var_cb = diddle_var_cb
+        self.set_player_cb = set_player_cb
 
     ###################################
     # User input
@@ -152,6 +160,10 @@ class ChessTree(tk.Frame):
         values = self.table.item(clickedRow, 'values')
         next_move = self.table.item(clickedRow, 'text')
         self.update_tree_selection_2ndary(next_move)
+
+    def set_player(self):
+        # self.is_white is a control variable attached to the White/Black radio buttons
+        self.set_player_cb(self.is_white.get())
 
     ###########################
     #
