@@ -33,7 +33,7 @@ def chess_model_api_client(operation, state_in, **kwargs):
 
 class App(object):
     def __init__(self, parent=None):
-        is_white = True
+        self.is_white = True
 
         #######################################
         # Set up the TK space
@@ -76,7 +76,7 @@ class App(object):
         #######################################
         # Create the board view (bv)
         #######################################
-        self.bv = SmartBoard(self.left, self.move, is_white=is_white)
+        self.bv = SmartBoard(self.left, self.move, is_white=self.is_white)
 
         #######################################
         # Create the right top widgents
@@ -121,8 +121,7 @@ class App(object):
         #######################################
         # Create the chess tree (ct) and controls
         #######################################
-        self.ct = ChessTree(self.bottom, self.backFullBtn, self.backBtn, self.frwdBtn, self.frwdFullBtn,
-            self.diddle_var, self.move_to_tree_node, self.set_player, is_white)
+        self.ct = ChessTree(self.bottom, self.diddle_var, self.move_to_tree_node, self.set_player, self.is_white)
 
         # initialize separate comment editor window, which doesn't exist yet
         self.ce_root = None
@@ -132,7 +131,7 @@ class App(object):
         # Create the chess model (cm)
         #######################################
         self.state = json.loads(chess_model_api_init())
-        self.state, _ = chess_model_api_client('set_headers', self.state, is_white=is_white)
+        self.state, _ = chess_model_api_client('set_headers', self.state, is_white=self.is_white)
         self.make_tree()
 
     #################################
@@ -159,6 +158,7 @@ class App(object):
     def update_display(self):
         self.bv.bv_update(self.state["piece_distrib"], self.state["legal_moves"], self.state["turn"])
         self.cl.update_listing(self.state["moves"])
+        self.update_buttons(self.state["has_parent"], self.state["variations"])
         self.update_ce()
         self.ct.ctc_update_display(self.state["moves"], self.state["variations"])
 
@@ -167,6 +167,20 @@ class App(object):
             chess_model_api_make_tree(json_state(self.state)))
         self.ct.ctc_make_tree(self.state["variations"], tree_dict)
         self.update_display()
+
+    def update_buttons(self, has_parent, variations):
+        # disable back buttons if can't go back no more
+        new_state = tk.NORMAL
+        if not has_parent:
+            new_state = tk.DISABLED
+        self.backBtn.config(state=new_state)
+        self.backFullBtn.config(state=new_state)
+
+        new_state = tk.NORMAL
+        if not variations:
+            new_state = tk.DISABLED
+        self.frwdBtn.config(state=new_state)
+        self.frwdFullBtn.config(state=new_state)
 
     #################################
     # Fits pattern
@@ -177,10 +191,12 @@ class App(object):
     #################################
     def diddle_var(self, diddle, san):
         self.state, _ = chess_model_api_client('diddle_var', self.state, diddle=diddle, san=san)
+        self.update_buttons(self.state["has_parent"], self.state["variations"])
         return self.state["variations"]
 
     def set_player(self, is_white):
         # is_white = self.is_white.get()
+        self.is_white = is_white
         self.bv.bv_set_player(is_white)
         self.bv.bv_update_display(self.state["piece_distrib"])
         self.state, _ = chess_model_api_client('set_headers', self.state, is_white=is_white)
@@ -196,7 +212,7 @@ class App(object):
                 self.state["pgn_str"] = f.read()
             self.state["moves"] = []
             self.state, _ = chess_model_api_client('move_back_full', self.state)
-            self.set_player()
+            self.set_player(self.is_white)
             self.make_tree()
         self.parent.focus_force()
 

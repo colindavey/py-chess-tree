@@ -9,8 +9,7 @@ import tkinter.ttk as tktree
 
 class ChessTree(tk.Frame):
     # def __init__(self, tree_parent, button_left_parent, button_right_parent, table_parent, 
-    def __init__(self, parent, backFullBtn, backBtn, frwdBtn, frwdFullBtn,
-        diddle_var_cb, move_to_tree_node_cb, set_player_cb, is_white):
+    def __init__(self, parent, diddle_var_cb, move_to_tree_node_cb, set_player_cb, is_white):
         # tk.Frame.__init__(self, tree_parent, button_parent, table_parent)
         # tk.Frame.__init__(self, button_parent, table_parent)
         # tk.Frame.__init__(self, button_parent)
@@ -38,10 +37,6 @@ class ChessTree(tk.Frame):
         ####################################
         # Buttons
         ####################################
-        self.backFullBtn = backFullBtn
-        self.backBtn = backBtn
-        self.frwdBtn = frwdBtn
-        self.frwdFullBtn = frwdFullBtn
 
         self.is_white = tk.IntVar()
         self.is_white.set(is_white)
@@ -416,19 +411,6 @@ class ChessTree(tk.Frame):
             if selected_variation == variations[-1]:
                 new_state = tk.DISABLED
             self.demoteVarBtn.config(state=new_state)
-
-        new_state = tk.NORMAL
-        if not has_variations:
-            new_state = tk.DISABLED
-        self.frwdBtn.config(state=new_state)
-        self.frwdFullBtn.config(state=new_state)
-
-        # diable back buttons if can't go back no more
-        new_state = tk.NORMAL
-        if not has_parent:
-            new_state = tk.DISABLED
-        self.backBtn.config(state=new_state)
-        self.backFullBtn.config(state=new_state)
     #
     ##########################################
 
