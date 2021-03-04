@@ -1,5 +1,6 @@
 # /usr/bin/python
 import tkinter as tk
+from tkinter import messagebox
 
 def geo_str2list(geo_str):
     geo_str = geo_str.replace('+', ' ')
@@ -11,6 +12,7 @@ def geo_str2list(geo_str):
 class CommentEditor(tk.Frame):
     def __init__(self, ce_parent, main_parent, title_str, save_comment_cb, on_closing_comment_editor_cb):
         tk.Frame.__init__(self, ce_parent)
+
         self.parent = ce_parent
         self.parent.title(title_str + '. Comment editor')
         self.parent.protocol("WM_DELETE_WINDOW", on_closing_comment_editor_cb)
@@ -30,7 +32,7 @@ class CommentEditor(tk.Frame):
 
         self.save_button = tk.Button(ce_parent, text='Save')
         self.save_button.pack(side=tk.BOTTOM)
-        self.save_button.config(command=save_comment_cb)
+        self.save_button.config(command=self.save_comment)
 
         screenw = main_parent.winfo_screenwidth()
         # screenh = main_parent.winfo_screenheight()
@@ -50,6 +52,7 @@ class CommentEditor(tk.Frame):
 
         self.pack()
         self.editor.focus()
+        self.save_comment_cb = save_comment_cb
 
     # public
     def update_comment(self, comment):
@@ -60,14 +63,25 @@ class CommentEditor(tk.Frame):
         comment = self.editor.get(1.0, tk.END)
         return comment[0:-1]
 
-    def get_is_modified(self):
-        return self.editor.edit_modified()
+    def check_comment(self):
+        if self.editor.edit_modified():
+            resp = messagebox.askyesnocancel('Save comment?', 'The comment has been edited. Save?')
+            print('resp', resp)
+            if resp is None:
+                return False
+            elif resp is True:
+                self.save_comment()
+        return True
 
+    # private
     def set_not_dirty(self):
         self.save_button.configure(state=tk.DISABLED)
         self.editor.edit_modified(False)
 
-    # private
+    def save_comment(self):
+        self.save_comment_cb()
+        self.set_not_dirty()
+
     def handle_modified(self, event):
         if self.editor.edit_modified():
             self.save_button.configure(state=tk.NORMAL)

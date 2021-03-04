@@ -1,7 +1,6 @@
 # /usr/bin/python
 import json
 import tkinter as tk
-from tkinter import messagebox
 import tkinter.filedialog as tkfiledialog
 
 from comment_editor import CommentEditor
@@ -288,8 +287,7 @@ class App(object):
 
     def update_ce(self):
         if self.ce_root is not None:
-            comment = self.state["comment"]
-            self.ce.update_comment(comment)
+            self.ce.update_comment(self.state["comment"])
             # this is necessary in case the user makes the next node by clicking on the tree.
             # otherwise, we could just use the selected node at that time.
             self.ce_tree_node_moves = self.state['moves'] 
@@ -297,18 +295,12 @@ class App(object):
     def check_comment(self):
         ret_val = True
         if self.ce_root is not None:
-            if self.ce.get_is_modified():
-                resp = messagebox.askyesnocancel('Save comment?', 'The comment has been edited. Save?')
-                if resp is None:
-                    ret_val = False
-                elif resp is True:
-                    self.save_comment()
+            ret_val = self.ce.check_comment()
         return ret_val
 
     def save_comment(self):
         self.state, _ = chess_model_api_client('set_comment', self.state, comment=self.ce.get_comment())
         self.ct.ctc_update_tree_node(self.state["node_str"], self.ce_tree_node_moves)
-        self.ce.set_not_dirty()
 
     def on_closing_comment_editor(self):
         if self.check_comment():
