@@ -3,6 +3,7 @@
 import tkinter as tk
 import tkinter.font as tkfont
 import tkinter.ttk as tktree
+from tkinter import messagebox
 
 # !!!git this for tooltips
 # import wckToolTips
@@ -140,9 +141,9 @@ class ChessTree(tk.Frame):
         self.tree.bind("<Button-1>", self.handle_tree_click)
         self.tree.bind("<Key>", self.handle_tree_click)
         self.tree.bind("<<TreeviewSelect>>", self.handle_node_select)
-        self.tree_clicked = False
         # self.tree.configure(takefocus=1)
 
+        self.tree_clicked = False
         self.move_to_tree_node_cb = move_to_tree_node_cb
         self.diddle_var_cb = diddle_var_cb
         self.set_player_cb = set_player_cb
@@ -168,6 +169,8 @@ class ChessTree(tk.Frame):
     # or key press as opposed to programatically
     def handle_tree_click(self, event):
         self.tree_clicked = True
+        if str(self.tree['selectmode']) == 'none':
+            messagebox.showinfo(message="Can't click tree while comment editor is open.")
 
     def handle_node_select(self, event):
         if self.tree_clicked:
@@ -258,6 +261,15 @@ class ChessTree(tk.Frame):
     # Table
     def ctc_get_next_move_str(self):
         return self.get_next_move_str_from_table()
+
+    # Table and tree
+    def ctc_enable(self, val):
+        if val:
+            self.tree.configure(selectmode="extended")
+            # self.table.configure(selectmode='browse')
+        else:
+            self.tree.configure(selectmode="none")
+            # self.table.configure(selectmode='none')
 
     ###########################
     #

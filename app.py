@@ -284,6 +284,15 @@ class App(object):
         # low level tk stuff
         self.ce_root.lift()
         self.ce_root.update()
+        # self.ct.tree.configure(selectmode="none")
+        self.ct.ctc_enable(False)
+
+    def on_closing_comment_editor(self):
+        if self.check_comment():
+            self.ce_root.destroy()
+            self.ce_root = None
+            # self.ct.tree.configure(selectmode="extended")
+            self.ct.ctc_enable(True)
 
     def update_ce(self):
         if self.ce_root is not None:
@@ -301,11 +310,6 @@ class App(object):
     def save_comment(self):
         self.state, _ = chess_model_api_client('set_comment', self.state, comment=self.ce.get_comment())
         self.ct.ctc_update_tree_node(self.state["node_str"], self.ce_tree_node_moves)
-
-    def on_closing_comment_editor(self):
-        if self.check_comment():
-            self.ce_root.destroy()
-            self.ce_root = None
 
 if __name__ == "__main__":
     the_parent = tk.Tk()
