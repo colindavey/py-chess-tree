@@ -16,6 +16,7 @@ from chess_model_api_server import chess_model_api_make_tree
 # Utility Functions - used by App only
 
 def json_state(state_in):
+    print('in', state_in["moves"])
     state_arg = json.dumps({
         "pgn_str" : state_in["pgn_str"], 
         "moves" : state_in["moves"]
@@ -28,6 +29,7 @@ def chess_model_api_client(operation, state_in, **kwargs):
         json_state(state_in), 
         json.dumps(kwargs)
     )
+    print('out', state_in["moves"])
     return json.loads(state_ret), json.loads(outputs)
 
 class App(object):
@@ -155,7 +157,8 @@ class App(object):
     # Manipulates GUI
     #################################
     def update_display(self):
-        self.bv.bv_update(self.state["piece_distrib"], self.state["legal_moves"], self.state["turn"])
+        print(self.state["position"])
+        self.bv.bv_update(self.state["position"], self.state["legal_moves"], self.state["turn"])
         self.cl.update_listing(self.state["moves"])
         self.update_buttons(self.state["has_parent"], self.state["variations"])
         self.update_ce()
@@ -197,7 +200,7 @@ class App(object):
         # is_white = self.is_white.get()
         self.is_white = is_white
         self.bv.bv_set_player(is_white)
-        self.bv.bv_update_display(self.state["piece_distrib"])
+        self.bv.bv_update_display(self.state["position"])
         self.state, _ = chess_model_api_client('set_headers', self.state, is_white=is_white)
         self.ct.ctc_update_tree_node(self.state["root_node_str"], [])
 

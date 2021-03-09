@@ -17,7 +17,7 @@ def get_piece_color(piece):
 class SmartBoard(tk.Frame):
     def __init__(self, parent, move_cb, is_white=True):
         self.db = DumbBoard(parent, self.handle_click, is_white)
-        self.piece_distrib = []
+        self.position = []
         self.move_cb = move_cb
         self.legal_moves = []
         self.click1 = []
@@ -32,26 +32,26 @@ class SmartBoard(tk.Frame):
         self.db.db_set_player(is_white)
 
     # public
-    def bv_update(self, piece_distrib, legal_moves, turn):
+    def bv_update(self, position, legal_moves, turn):
         self.legal_moves = legal_moves
         self.turn = turn
-        self.bv_update_display(piece_distrib)
+        self.bv_update_display(position)
 
     # public/utility function
-    def bv_update_display(self, piece_distrib):
-        self.piece_distrib = piece_distrib
-        self.db.db_update_display(piece_distrib)
+    def bv_update_display(self, position):
+        self.position = position
+        self.db.db_update_display(position)
         
     # user input
     def handle_click(self, event):
         click_coords = self.db.db_get_click_location(event)
         # This update_display is necessary for when clicking multiple valid click1 squares
-        self.db.db_update_display(self.piece_distrib)
+        self.db.db_update_display(self.position)
         # print('click:', click_coords["file"], click_coords["rank"])
 
         # If clicked on piece of side w turn, then it's click1.
         #   highlight the piece and all legal moves
-        if get_piece_color(self.piece_distrib[click_coords["rank"]][click_coords["file"]]) == self.turn:
+        if get_piece_color(self.position[click_coords["rank"]][click_coords["file"]]) == self.turn:
             self.click1 = click_coords
             legal_dests, legal_dest_coords = self.get_legal_dests_from(click_coords)
             self.legal_dests = legal_dests

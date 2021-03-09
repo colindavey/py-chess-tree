@@ -100,7 +100,7 @@ def make_brief_comment_str(comment_str):
 def make_state(game, node):
     board = node.board()
     state = {}
-    piece_distrib = []
+    position = []
     for file_ in range(0,8):
         rank_array = []
         for rank in range(0,8):
@@ -110,8 +110,8 @@ def make_state(game, node):
             if piece is not None:
                 piece_symbol = piece.symbol()
             rank_array.append(piece_symbol)
-        piece_distrib.append(rank_array)
-    state["piece_distrib"] = piece_distrib
+        position.append(rank_array)
+    state["position"] = position
     state["fen"] = board.fen()
 
     state["turn"] = 'W' if board.turn else 'B'

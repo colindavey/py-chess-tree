@@ -98,7 +98,7 @@ class DumbBoard(tk.Frame):
             self.draw_tile(item["file"], item["rank"], tile)
 
     # public
-    def db_update_display(self, piece_distrib):
+    def db_update_display(self, position):
         """ draw an empty board then draw each of the
         pieces in the board over the top"""
 
@@ -108,7 +108,7 @@ class DumbBoard(tk.Frame):
         # so we couldn't see them
         self.clear_canvas()
         self.draw_empty_board()
-        self.draw_pieces(piece_distrib)
+        self.draw_pieces(position)
 
     # public
     def db_get_click_location(self, event):
@@ -159,10 +159,10 @@ class DumbBoard(tk.Frame):
                 self.draw_tile(f, r, tile)
 
     # private
-    def draw_pieces(self, piece_distrib):
+    def draw_pieces(self, position):
         for r in range(0, 8):
             for f in range(0, 8):
-                piece = piece_distrib[r][f]
+                piece = position[r][f]
                 if piece == '':
                     continue  # skip empty tiles
                 tile = self.images[piece]
