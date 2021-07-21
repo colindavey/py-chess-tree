@@ -86,7 +86,7 @@ class ChessTree(tk.Frame):
         self.table.column("#0", width=100, stretch=tk.NO)
         self.table.column('move', anchor='w', width=100, stretch=tk.NO)
         self.table.configure(selectmode='browse')
-        self.table.bind("<Button-1>", self.handle_table_click)
+        self.table.bind("<ButtonRelease-1>", self.handle_table_click)
         
         ####################################
         # Tree
